@@ -349,80 +349,57 @@
       function olahDataFirebaseFixed(arrayFirebase) {
   if (!arrayFirebase || arrayFirebase.length === 0) return [];
 
-  // 1. Ekstrak SEMUA jam masuk (dari) dan jam keluar (sampai) menjadi antrean kejadian murni
-  let events = [];
+  let data = JSON.parse(JSON.stringify(arrayFirebase));
 
-  arrayFirebase.forEach((row) => {
-    // Ambil jam Start
-    if (row.dari && row.dari !== "-") {
-      events.push({
-        tipe: "START",
-        tanggal: row.tanggal,
-        jam: row.dari,
-        keterangan: row.keterangan || "-"
-      });
-    }
+  // STEP 1: Urai jam Finish yang "salah tempat" (Finish Dini Hari < Start Pagi)
+  for (let i = 0; i < data.length; i++) {
+    let current = data[i];
 
-    // Ambil jam Finish
-    if (row.sampai && row.sampai !== "-") {
-      // Jika di baris yang sama jam Finish < jam Start (misal Start 5:39, Sampai 1:06),
-      // berarti jam 1:06 ditekan di tanggal ini tapi milik shift hari sebelumnya.
-      // Kita tandai sebagai Finish lintas hari.
-      events.push({
-        tipe: "FINISH",
-        tanggal: row.tanggal,
-        jam: row.sampai,
-        keterangan: row.keterangan || "-"
-      });
-    }
-  });
+    if (current.dari && current.sampai && current.dari !== "-" && current.sampai !== "-") {
+      let [hStart, mStart] = current.dari.split(":").map(Number);
+      let [hEnd, mEnd] = current.sampai.split(":").map(Number);
 
-  // Sortir antrean berdasarkan tanggal transaksi agar urutannya konsisten
-  events.sort((a, b) => parseTanggal(a.tanggal) - parseTanggal(b.tanggal));
+      let minStart = hStart * 60 + mStart;
+      let minEnd = hEnd * 60 + mEnd;
 
-  let hasil = [];
-  let idx = 0;
-
-  // 2. Pasangkan START -> FINISH berikutnya secara berurutan
-  while (idx < events.length) {
-    let curr = events[idx];
-
-    if (curr.tipe === "START") {
-      let next = events[idx + 1];
-
-      if (next && next.tipe === "FINISH") {
-        // Ambil keterangan (prioritaskan keterangan yang ada nilainya)
-        let ket = curr.keterangan !== "-" ? curr.keterangan : next.keterangan;
-        if (curr.keterangan !== "-" && next.keterangan !== "-" && curr.keterangan !== next.keterangan) {
-          ket = `${curr.keterangan} ${next.keterangan}`;
+      // Jika Finish dipencet di bawah jam 05:00 Dini Hari (minEnd < 300)
+      // DAN Start dipencet setelah jam 05:00 Pagi (minStart >= 300)
+      if (minEnd < 300 && minStart >= 300) {
+        // Berarti 'sampai' (1:06) ini ADALAH Finish milik HARI SEBELUMNYA (i - 1)
+        if (i > 0) {
+          let prev = data[i - 1];
+          // Pindahkan 1:06 ke hari sebelumnya
+          prev.sampai = current.sampai;
+          if (current.keterangan && current.keterangan !== "-") {
+            prev.keterangan = current.keterangan;
+          }
         }
-
-        hasil.push({
-          tanggal: curr.tanggal, // Tanggal shift diikat pada tanggal START
-          dari: curr.jam,
-          sampai: next.jam,
-          totalJam: hitungTotalJam(curr.jam, next.jam),
-          keterangan: ket
-        });
-        idx += 2; // Lompat ke pasangan berikutnya
-      } else {
-        // Jika START bertemu START (Lupa/Belum Finish)
-        hasil.push({
-          tanggal: curr.tanggal,
-          dari: curr.jam,
-          sampai: "-",
-          totalJam: "-",
-          keterangan: curr.keterangan
-        });
-        idx += 1;
+        // Kosongkan 'sampai' hari ini karena jam 1:06 sudah dipakai hari sebelumnya
+        current.sampai = "-";
       }
-    } else {
-      // Jika ada FINISH yang tertinggal di awal tanpa START
-      idx += 1;
     }
   }
 
-  return hasil;
+  // STEP 2: Pasangkan Start yang masih kosong Finish-nya dengan Finish hari berikutnya
+  for (let i = 0; i < data.length; i++) {
+    let current = data[i];
+
+    if (current.dari && current.dari !== "-" && (!current.sampai || current.sampai === "-")) {
+      let next = data[i + 1];
+      if (next && next.sampai && next.sampai !== "-") {
+        current.sampai = next.sampai;
+        if (next.keterangan && next.keterangan !== "-") {
+          current.keterangan = next.keterangan;
+        }
+        next.sampai = "-";
+      }
+    }
+
+    // Hitung total jam berdasarkan pasangan yang sudah benar
+    current.totalJam = hitungTotalJam(current.dari, current.sampai);
+  }
+
+  return data;
 }
 
       async function muatDaftarNamaOtomatis() {

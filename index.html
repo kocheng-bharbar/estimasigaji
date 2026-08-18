@@ -359,29 +359,40 @@ function hitungTotalJam(jamMulai, jamAkhir) {
 }
 
 // LOGIKA NORMALISASI SHIFT LINTAS HARI
+// LOGIKA REVISI: Pasangkan Finish Shift secara Kronologis
 function perbaikiShiftLintasHari(arrayDetail) {
   let hasil = [];
 
   for (let i = 0; i < arrayDetail.length; i++) {
     let item = { ...arrayDetail[i] };
-    
-    let [hIn] = (item.dari && item.dari !== "-" ? item.dari : "0:0").split(":").map(Number);
-    let [hOut] = (item.sampai && item.sampai !== "-" ? item.sampai : "0:0").split(":").map(Number);
 
-    if (hOut < 5 && hIn >= 5 && hasil.length > 0) {
+    // Ambil nilai jam masuk dan keluar
+    let jamMasuk = item.dari && item.dari !== "-" ? item.dari : null;
+    let jamKeluar = item.sampai && item.sampai !== "-" ? item.sampai : null;
+
+    // Jika baris ini HANYA punya jam keluar (Finish Shift) tanpa jam masuk,
+    // maka jam keluar ini milik Start Shift di baris/hari sebelumnya!
+    if (!jamMasuk && jamKeluar && hasil.length > 0) {
       let hariSebelumnya = hasil[hasil.length - 1];
       
-      hariSebelumnya.sampai = item.sampai;
+      // Pasangkan jam keluar ke hari sebelumnya
+      hariSebelumnya.sampai = jamKeluar;
       hariSebelumnya.totalJam = hitungTotalJam(hariSebelumnya.dari, hariSebelumnya.sampai);
 
-      item.sampai = "-";
-      item.totalJam = "-";
-    } else if (item.dari && (!item.sampai || item.sampai === "-")) {
-      item.totalJam = "-";
-    } else {
-      item.totalJam = hitungTotalJam(item.dari, item.sampai);
+      // Gabungkan keterangan jika ada (misal Overtime / Longtrip)
+      if (item.keterangan && item.keterangan !== "-") {
+        if (!hariSebelumnya.keterangan || hariSebelumnya.keterangan === "-") {
+          hariSebelumnya.keterangan = item.keterangan;
+        } else if (!hariSebelumnya.keterangan.includes(item.keterangan)) {
+          hariSebelumnya.keterangan += " " + item.keterangan;
+        }
+      }
+      // Jangan masukkan baris yatim ini ke hasil
+      continue;
     }
 
+    // Hitung total jam untuk baris normal
+    item.totalJam = hitungTotalJam(item.dari, item.sampai);
     hasil.push(item);
   }
 

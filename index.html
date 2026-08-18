@@ -349,7 +349,7 @@
       function olahDataFirebaseFixed(arrayFirebase) {
   if (!arrayFirebase || arrayFirebase.length === 0) return [];
 
-  // 1. Ekstrak seluruh event (Start / Finish) menjadi satu barisan antrean
+  // 1. Kumpulkan semua kejadian (Start / Finish) secara berurutan
   let events = [];
   arrayFirebase.forEach((row) => {
     if (row.dari && row.dari !== "-") {
@@ -370,22 +370,10 @@
     }
   });
 
-  let hasilMap = {};
-
-  // Inisialisasi struktur tanggal dasar dari array asli
-  arrayFirebase.forEach((row) => {
-    hasilMap[row.tanggal] = {
-      tanggal: row.tanggal,
-      dari: "-",
-      sampai: "-",
-      totalJam: "-",
-      keterangan: "-"
-    };
-  });
-
+  let hasil = [];
   let idx = 0;
 
-  // 2. Pasangkan START -> FINISH berikutnya secara berurutan
+  // 2. Pasangkan START ke FINISH berikutnya
   while (idx < events.length) {
     let curr = events[idx];
 
@@ -393,45 +381,42 @@
       let next = events[idx + 1];
 
       if (next && next.tipe === "FINISH") {
-        // Ambil keterangan yang tidak kosong (prioritaskan dari Finish atau Start)
+        // Ambil keterangan yang valid
         let ket = next.keterangan !== "-" ? next.keterangan : curr.keterangan;
 
-        hasilMap[curr.tanggal] = {
-          tanggal: curr.tanggal, // Tanggal shift diikat pada tanggal START
+        hasil.push({
+          tanggal: curr.tanggal, // Tanggal shift selalu mengikuti tanggal START
           dari: curr.jam,
           sampai: next.jam,
           totalJam: hitungTotalJam(curr.jam, next.jam),
           keterangan: ket
-        };
-        idx += 2; // Berhasil dipasangkan, lanjut ke event ke-3
+        });
+        idx += 2; // Lompat ke event ke-3
       } else {
-        // Jika START bertemu START (lupa Finish)
-        hasilMap[curr.tanggal] = {
+        // Jika START bertemu START (Lupa Finish)
+        hasil.push({
           tanggal: curr.tanggal,
           dari: curr.jam,
           sampai: "-",
           totalJam: "-",
           keterangan: curr.keterangan
-        };
+        });
         idx += 1;
       }
     } else {
-      // Jika FINISH tanpa START sebelumnya (lupa Start)
-      if (!hasilMap[curr.tanggal] || hasilMap[curr.tanggal].dari === "-") {
-        hasilMap[curr.tanggal] = {
-          tanggal: curr.tanggal,
-          dari: "-",
-          sampai: curr.jam,
-          totalJam: "-",
-          keterangan: curr.keterangan
-        };
-      }
+      // Jika FINISH tanpa START (Lupa Start)
+      hasil.push({
+        tanggal: curr.tanggal,
+        dari: "-",
+        sampai: curr.jam,
+        totalJam: "-",
+        keterangan: curr.keterangan
+      });
       idx += 1;
     }
   }
 
-  // 3. Kembalikan menjadi array terurut
-  return Object.values(hasilMap);
+  return hasil;
 }
 
       async function muatDaftarNamaOtomatis() {

@@ -38,8 +38,6 @@
         background-color: #e8f5e9;
         border-left: 4px solid #198754;
       }
-
-      /* CSS KHUSUS UNTUK HP AGAR TABEL RAPI */
       @media (max-width: 768px) {
         .tabel-absen {
           font-size: 0.85rem;
@@ -50,8 +48,6 @@
           padding: 0.5rem;
         }
       }
-
-      /* Highlight hari kosong agar terlihat beda sedikit */
       .baris-kosong {
         background-color: #fff3cd !important;
         color: #856404;
@@ -276,303 +272,349 @@
 
     <script type="module">
       import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-import {
-  getFirestore,
-  doc,
-  getDoc,
-  collection,
-  getDocs,
-} from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+      import {
+        getFirestore,
+        doc,
+        getDoc,
+        collection,
+        getDocs,
+      } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
-const firebaseConfig = {
-  apiKey: "AIzaSyCnmSSs8wqdw2OgoTZrV2UJImDmvXiaxUs",
-  authDomain: "absensi-bb.firebaseapp.com",
-  projectId: "absensi-bb",
-  storageBucket: "absensi-bb.firebasestorage.app",
-  messagingSenderId: "532452127372",
-  appId: "1:532452127372:web:47c40b7362e2c96aa981a9",
-  measurementId: "G-L2V6L2098D",
-};
+      const firebaseConfig = {
+        apiKey: "AIzaSyCnmSSs8wqdw2OgoTZrV2UJImDmvXiaxUs",
+        authDomain: "absensi-bb.firebaseapp.com",
+        projectId: "absensi-bb",
+        storageBucket: "absensi-bb.firebasestorage.app",
+        messagingSenderId: "532452127372",
+        appId: "1:532452127372:web:47c40b7362e2c96aa981a9",
+        measurementId: "G-L2V6L2098D",
+      };
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+      const app = initializeApp(firebaseConfig);
+      const db = getFirestore(app);
 
-const formatRupiah = (angka) => {
-  return new Intl.NumberFormat("id-ID", {
-    style: "currency",
-    currency: "IDR",
-    maximumFractionDigits: 0,
-  }).format(angka);
-};
+      const formatRupiah = (angka) => {
+        return new Intl.NumberFormat("id-ID", {
+          style: "currency",
+          currency: "IDR",
+          maximumFractionDigits: 0,
+        }).format(angka);
+      };
 
-const namaBulan = [
-  "Januari",
-  "Februari",
-  "Maret",
-  "April",
-  "Mei",
-  "Juni",
-  "Juli",
-  "Agustus",
-  "September",
-  "Oktober",
-  "November",
-  "Desember",
-];
+      const namaBulan = [
+        "Januari",
+        "Februari",
+        "Maret",
+        "April",
+        "Mei",
+        "Juni",
+        "Juli",
+        "Agustus",
+        "September",
+        "Oktober",
+        "November",
+        "Desember",
+      ];
 
-function parseTanggal(tglStr) {
-  if (!tglStr) return new Date();
-  let parts = tglStr.trim().split(" ");
-  if (parts.length !== 3) return new Date();
-  let d = parseInt(parts[0], 10);
-  let m = namaBulan.indexOf(parts[1]);
-  let y = parseInt(parts[2], 10);
-  return new Date(y, m, d);
-}
+      function parseTanggal(tglStr) {
+        if (!tglStr) return new Date();
+        let parts = tglStr.trim().split(" ");
+        if (parts.length !== 3) return new Date();
+        let d = parseInt(parts[0], 10);
+        let m = namaBulan.indexOf(parts[1]);
+        let y = parseInt(parts[2], 10);
+        return new Date(y, m, d);
+      }
 
-function formatTanggal(dateObj) {
-  let d = dateObj.getDate().toString().padStart(2, "0");
-  let m = namaBulan[dateObj.getMonth()];
-  let y = dateObj.getFullYear();
-  return `${d} ${m} ${y}`;
-}
+      function formatTanggal(dateObj) {
+        let d = dateObj.getDate().toString().padStart(2, "0");
+        let m = namaBulan[dateObj.getMonth()];
+        let y = dateObj.getFullYear();
+        return `${d} ${m} ${y}`;
+      }
 
-// CUKUP DEKLARASIKAN FUNGSI INI 1 KALI SAJA DI SINI
-function hitungTotalJam(jamMulai, jamAkhir) {
-  if (!jamMulai || !jamAkhir || jamMulai === "-" || jamAkhir === "-") return "-";
-  
-  let [h1, m1] = jamMulai.split(":").map(Number);
-  let [h2, m2] = jamAkhir.split(":").map(Number);
-  
-  let startMin = h1 * 60 + m1;
-  let endMin = h2 * 60 + m2;
-  
-  if (endMin < startMin) {
-    endMin += 24 * 60;
-  }
-  
-  let diff = endMin - startMin;
-  let jam = Math.floor(diff / 60);
-  let menit = diff % 60;
-  
-  return `${jam}:${menit.toString().padStart(2, "0")}`;
-}
+      function hitungTotalJam(jamMulai, jamAkhir) {
+        if (!jamMulai || !jamAkhir || jamMulai === "-" || jamAkhir === "-") return "-";
+        
+        let [h1, m1] = jamMulai.split(":").map(Number);
+        let [h2, m2] = jamAkhir.split(":").map(Number);
+        
+        let startMin = h1 * 60 + m1;
+        let endMin = h2 * 60 + m2;
+        
+        if (endMin < startMin) {
+          endMin += 24 * 60; // Penanganan shift lintas hari
+        }
+        
+        let diff = endMin - startMin;
+        let jam = Math.floor(diff / 60);
+        let menit = diff % 60;
+        
+        return `${jam}:${menit.toString().padStart(2, "0")}`;
+      }
 
-// LOGIKA NORMALISASI SHIFT LINTAS HARI
-// LOGIKA REVISI: Pasangkan Finish Shift secara Kronologis
-function perbaikiShiftLintasHari(arrayDetail) {
-  let hasil = [];
+      // LOGIKA BARU: MEMPASANGKAN START & FINISH SECARA STRICT
+      function perbaikiShiftPasanganStrict(arrayRaw) {
+        let kejadian = [];
 
-  for (let i = 0; i < arrayDetail.length; i++) {
-    let item = { ...arrayDetail[i] };
+        // Break down data menjadi event individual (Start / Finish)
+        arrayRaw.forEach((row) => {
+          if (row.dari && row.dari !== "-") {
+            kejadian.push({
+              tipe: "START",
+              tanggal: row.tanggal,
+              jam: row.dari,
+              keterangan: row.keterangan || "-",
+            });
+          }
+          if (row.sampai && row.sampai !== "-") {
+            kejadian.push({
+              tipe: "FINISH",
+              tanggal: row.tanggal,
+              jam: row.sampai,
+              keterangan: row.keterangan || "-",
+            });
+          }
+        });
 
-    // Ambil nilai jam masuk dan keluar
-    let jamMasuk = item.dari && item.dari !== "-" ? item.dari : null;
-    let jamKeluar = item.sampai && item.sampai !== "-" ? item.sampai : null;
+        let hasil = [];
+        let i = 0;
 
-    // Jika baris ini HANYA punya jam keluar (Finish Shift) tanpa jam masuk,
-    // maka jam keluar ini milik Start Shift di baris/hari sebelumnya!
-    if (!jamMasuk && jamKeluar && hasil.length > 0) {
-      let hariSebelumnya = hasil[hasil.length - 1];
-      
-      // Pasangkan jam keluar ke hari sebelumnya
-      hariSebelumnya.sampai = jamKeluar;
-      hariSebelumnya.totalJam = hitungTotalJam(hariSebelumnya.dari, hariSebelumnya.sampai);
+        while (i < kejadian.length) {
+          let curr = kejadian[i];
 
-      // Gabungkan keterangan jika ada (misal Overtime / Longtrip)
-      if (item.keterangan && item.keterangan !== "-") {
-        if (!hariSebelumnya.keterangan || hariSebelumnya.keterangan === "-") {
-          hariSebelumnya.keterangan = item.keterangan;
-        } else if (!hariSebelumnya.keterangan.includes(item.keterangan)) {
-          hariSebelumnya.keterangan += " " + item.keterangan;
+          if (curr.tipe === "START") {
+            let next = kejadian[i + 1];
+
+            // Pasangan ideal: START diikuti FINISH
+            if (next && next.tipe === "FINISH") {
+              let ketCombined = [];
+              if (curr.keterangan !== "-") ketCombined.push(curr.keterangan);
+              if (next.keterangan !== "-" && !ketCombined.includes(next.keterangan)) {
+                ketCombined.push(next.keterangan);
+              }
+
+              hasil.push({
+                tanggal: curr.tanggal, // Tanggal shift selalu milik START
+                dari: curr.jam,
+                sampai: next.jam,
+                totalJam: hitungTotalJam(curr.jam, next.jam),
+                keterangan: ketCombined.length > 0 ? ketCombined.join(" ") : "-",
+              });
+              i += 2; // Lompat 2 kejadian
+            } else {
+              // Kasus START ketemu START lagi (Finish lupa diisi)
+              hasil.push({
+                tanggal: curr.tanggal,
+                dari: curr.jam,
+                sampai: "-",
+                totalJam: "-",
+                keterangan: curr.keterangan,
+              });
+              i += 1;
+            }
+          } else {
+            // Kasus FINISH sendirian tanpa START (Start lupa diisi)
+            hasil.push({
+              tanggal: curr.tanggal,
+              dari: "-",
+              sampai: curr.jam,
+              totalJam: "-",
+              keterangan: curr.keterangan,
+            });
+            i += 1;
+          }
+        }
+
+        return hasil;
+      }
+
+      async function muatDaftarNamaOtomatis() {
+        const dropdown = document.getElementById("inputNama");
+        try {
+          const querySnapshot = await getDocs(collection(db, "rekap_absensi"));
+          let daftarNama = [];
+          querySnapshot.forEach((doc) => {
+            daftarNama.push(doc.id);
+          });
+          daftarNama.sort();
+          dropdown.innerHTML =
+            '<option value="">-- Pilih Nama Anda --</option>';
+          daftarNama.forEach((nama) => {
+            dropdown.innerHTML += `<option value="${nama}">${nama}</option>`;
+          });
+        } catch (error) {
+          console.error(error);
+          dropdown.innerHTML = '<option value="">Error memuat nama</option>';
         }
       }
-      // Jangan masukkan baris yatim ini ke hasil
-      continue;
-    }
+      muatDaftarNamaOtomatis();
 
-    // Hitung total jam untuk baris normal
-    item.totalJam = hitungTotalJam(item.dari, item.sampai);
-    hasil.push(item);
-  }
+      document.getElementById("btnCari").addEventListener("click", async () => {
+        const nama = document.getElementById("inputNama").value;
+        const nik = document.getElementById("inputNik").value;
+        const errorBox = document.getElementById("errorMsg");
+        const hasilBox = document.getElementById("hasilData");
+        const tableBody = document.getElementById("tabelBodyDetail");
 
-  return hasil;
-}
+        errorBox.classList.add("d-none");
+        hasilBox.style.display = "none";
+        tableBody.innerHTML = "";
 
-async function muatDaftarNamaOtomatis() {
-  const dropdown = document.getElementById("inputNama");
-  try {
-    const querySnapshot = await getDocs(collection(db, "rekap_absensi"));
-    let daftarNama = [];
-    querySnapshot.forEach((doc) => {
-      daftarNama.push(doc.id);
-    });
-    daftarNama.sort();
-    dropdown.innerHTML =
-      '<option value="">-- Pilih Nama Anda --</option>';
-    daftarNama.forEach((nama) => {
-      dropdown.innerHTML += `<option value="${nama}">${nama}</option>`;
-    });
-  } catch (error) {
-    console.error(error);
-    dropdown.innerHTML = '<option value="">Error memuat nama</option>';
-  }
-}
-muatDaftarNamaOtomatis();
-
-document.getElementById("btnCari").addEventListener("click", async () => {
-  const nama = document.getElementById("inputNama");
-  const namaVal = nama.value;
-  const nik = document.getElementById("inputNik").value;
-  const errorBox = document.getElementById("errorMsg");
-  const hasilBox = document.getElementById("hasilData");
-  const tableBody = document.getElementById("tabelBodyDetail");
-
-  errorBox.classList.add("d-none");
-  hasilBox.style.display = "none";
-  tableBody.innerHTML = "";
-
-  if (!namaVal || !nik) {
-    errorBox.textContent = "Silakan pilih Nama dan masukkan NIK Anda!";
-    errorBox.classList.remove("d-none");
-    return;
-  }
-
-  try {
-    const docRef = doc(db, "rekap_absensi", namaVal);
-    const docSnap = await getDoc(docRef);
-
-    if (docSnap.exists()) {
-      const dbData = docSnap.data();
-
-      if (dbData.nik === nik) {
-        document.getElementById("namaKaryawanJudul").textContent =
-          dbData.nama;
-        let arrayDetail = JSON.parse(dbData.detail);
-
-        if (arrayDetail.length === 0) {
-          errorBox.textContent = "Belum ada riwayat absensi bulan ini.";
+        if (!nama || !nik) {
+          errorBox.textContent = "Silakan pilih Nama dan masukkan NIK Anda!";
           errorBox.classList.remove("d-none");
           return;
         }
 
-        arrayDetail.sort(
-          (a, b) => parseTanggal(a.tanggal) - parseTanggal(b.tanggal)
-        );
+        try {
+          const docRef = doc(db, "rekap_absensi", nama);
+          const docSnap = await getDoc(docRef);
 
-        arrayDetail = perbaikiShiftLintasHari(arrayDetail);
+          if (docSnap.exists()) {
+            const dbData = docSnap.data();
 
-        let startDate = parseTanggal(arrayDetail[0].tanggal);
-        let endDate = parseTanggal(
-          arrayDetail[arrayDetail.length - 1].tanggal
-        );
+            if (dbData.nik === nik) {
+              document.getElementById("namaKaryawanJudul").textContent =
+                dbData.nama;
+              let arrayDetail = JSON.parse(dbData.detail);
 
-        let mapAbsen = {};
-        arrayDetail.forEach((hari) => {
-          mapAbsen[hari.tanggal] = hari;
-        });
+              if (arrayDetail.length === 0) {
+                errorBox.textContent = "Belum ada riwayat absensi bulan ini.";
+                errorBox.classList.remove("d-none");
+                return;
+              }
 
-        let barisHTML = "";
-        let currDate = new Date(startDate);
+              // 1. Urutkan berdasarkan tanggal
+              arrayDetail.sort(
+                (a, b) => parseTanggal(a.tanggal) - parseTanggal(b.tanggal)
+              );
 
-        while (currDate <= endDate) {
-          let tglKey = formatTanggal(currDate);
-          let dataHariIni = mapAbsen[tglKey];
+              // 2. Pasangkan START & FINISH berdasarkan logika urutan
+              arrayDetail = perbaikiShiftPasanganStrict(arrayDetail);
 
-          if (dataHariIni) {
-            barisHTML += `
-                          <tr>
-                              <td class="text-nowrap fw-medium">${dataHariIni.tanggal}</td>
-                              <td>${dataHariIni.dari || "-"}</td>
-                              <td>${dataHariIni.sampai || "-"}</td>
-                              <td>${dataHariIni.totalJam || "-"}</td>
-                              <td class="text-nowrap text-center">${dataHariIni.keterangan || "-"}</td>
-                          </tr>
-                      `;
+              if (arrayDetail.length === 0) {
+                errorBox.textContent = "Tidak ada rekaman data yang dapat diproses.";
+                errorBox.classList.remove("d-none");
+                return;
+              }
+
+              let startDate = parseTanggal(arrayDetail[0].tanggal);
+              let endDate = parseTanggal(
+                arrayDetail[arrayDetail.length - 1].tanggal
+              );
+
+              let mapAbsen = {};
+              arrayDetail.forEach((hari) => {
+                mapAbsen[hari.tanggal] = hari;
+              });
+
+              let barisHTML = "";
+              let currDate = new Date(startDate);
+
+              // 3. Render ke Tabel HTML
+              while (currDate <= endDate) {
+                let tglKey = formatTanggal(currDate);
+                let dataHariIni = mapAbsen[tglKey];
+
+                if (dataHariIni) {
+                  barisHTML += `
+                                <tr>
+                                    <td class="text-nowrap fw-medium">${dataHariIni.tanggal}</td>
+                                    <td>${dataHariIni.dari || "-"}</td>
+                                    <td>${dataHariIni.sampai || "-"}</td>
+                                    <td>${dataHariIni.totalJam || "-"}</td>
+                                    <td class="text-nowrap text-center">${dataHariIni.keterangan || "-"}</td>
+                                </tr>
+                            `;
+                } else {
+                  barisHTML += `
+                                <tr class="baris-kosong">
+                                    <td class="text-nowrap text-muted">${tglKey}</td>
+                                    <td class="text-muted">-</td>
+                                    <td class="text-muted">-</td>
+                                    <td class="text-muted">-</td>
+                                    <td class="text-muted">-</td>
+                                </tr>
+                            `;
+                }
+                currDate.setDate(currDate.getDate() + 1);
+              }
+
+              tableBody.innerHTML = barisHTML;
+
+              // ============================================
+              // RUMUS PERHITUNGAN GAJI
+              // ============================================
+              let totalHariMasuk = arrayDetail.filter(h => h.dari && h.dari !== "-").length;
+              let countLongtripJagaMalam = 0;
+              let totalJamOvertime = 0;
+
+              arrayDetail.forEach((hari) => {
+                const ketLower = (hari.keterangan || "").toLowerCase();
+                if (
+                  ketLower.includes("longtrip") ||
+                  ketLower.includes("jaga malam")
+                ) {
+                  countLongtripJagaMalam++;
+                }
+                const otMatch = (hari.keterangan || "").match(/Overtime\s*(\d+)/i);
+                if (otMatch) {
+                  totalJamOvertime += parseInt(otMatch[1], 10);
+                }
+              });
+
+              const nominalGajiPokok = totalHariMasuk * 174000;
+              const nominalLongtrip = countLongtripJagaMalam * 174000;
+              const nominalOvertime = totalJamOvertime * 15000;
+              const totalPendapatan =
+                nominalGajiPokok + nominalLongtrip + nominalOvertime;
+
+              const nominalPotSppbg = totalHariMasuk * 2000;
+              const nominalPotBpjsKes = 41811;
+              const nominalPotBpjsJht = 83623;
+              const nominalPotBpjsJp = 41811;
+              const totalPotongan =
+                nominalPotSppbg +
+                nominalPotBpjsKes +
+                nominalPotBpjsJht +
+                nominalPotBpjsJp;
+
+              const gajiBersih = totalPendapatan - totalPotongan;
+
+              // Render Angka ke UI
+              document.getElementById("txtHariMasuk").textContent = totalHariMasuk;
+              document.getElementById("valGajiPokok").textContent = formatRupiah(nominalGajiPokok);
+              document.getElementById("txtLongtrip").textContent = countLongtripJagaMalam;
+              document.getElementById("valLongtrip").textContent = formatRupiah(nominalLongtrip);
+              document.getElementById("txtOvertime").textContent = totalJamOvertime;
+              document.getElementById("valOvertime").textContent = formatRupiah(nominalOvertime);
+              document.getElementById("valTotalPendapatan").textContent = formatRupiah(totalPendapatan);
+
+              document.getElementById("txtHariSppbg").textContent = totalHariMasuk;
+              document.getElementById("valPotSppbg").textContent = "-" + formatRupiah(nominalPotSppbg);
+              document.getElementById("valPotKes").textContent = "-" + formatRupiah(nominalPotBpjsKes);
+              document.getElementById("valPotJht").textContent = "-" + formatRupiah(nominalPotBpjsJht);
+              document.getElementById("valPotJp").textContent = "-" + formatRupiah(nominalPotBpjsJp);
+              document.getElementById("valTotalPotongan").textContent = "-" + formatRupiah(totalPotongan);
+
+              document.getElementById("valGajiBersih").textContent = formatRupiah(gajiBersih);
+
+              hasilBox.style.display = "block";
+            } else {
+              errorBox.textContent = "NIK yang Anda masukkan salah.";
+              errorBox.classList.remove("d-none");
+            }
           } else {
-            barisHTML += `
-                          <tr class="baris-kosong">
-                              <td class="text-nowrap text-muted">${tglKey}</td>
-                              <td class="text-muted">-</td>
-                              <td class="text-muted">-</td>
-                              <td class="text-muted">-</td>
-                              <td class="text-muted">-</td>
-                          </tr>
-                      `;
+            errorBox.textContent = "Data absensi belum tersedia.";
+            errorBox.classList.remove("d-none");
           }
-          currDate.setDate(currDate.getDate() + 1);
+        } catch (error) {
+          console.error(error);
+          errorBox.textContent = "Terjadi kesalahan sistem saat memproses data.";
+          errorBox.classList.remove("d-none");
         }
-
-        tableBody.innerHTML = barisHTML;
-
-        let totalHariMasuk = arrayDetail.filter(h => h.dari && h.dari !== "-").length;
-        let countLongtripJagaMalam = 0;
-        let totalJamOvertime = 0;
-
-        arrayDetail.forEach((hari) => {
-          const ketLower = (hari.keterangan || "").toLowerCase();
-          if (
-            ketLower.includes("longtrip") ||
-            ketLower.includes("jaga malam")
-          ) {
-            countLongtripJagaMalam++;
-          }
-          const otMatch = (hari.keterangan || "").match(/Overtime\s*(\d+)/i);
-          if (otMatch) {
-            totalJamOvertime += parseInt(otMatch[1], 10);
-          }
-        });
-
-        const nominalGajiPokok = totalHariMasuk * 174000;
-        const nominalLongtrip = countLongtripJagaMalam * 174000;
-        const nominalOvertime = totalJamOvertime * 15000;
-        const totalPendapatan =
-          nominalGajiPokok + nominalLongtrip + nominalOvertime;
-
-        const nominalPotSppbg = totalHariMasuk * 2000;
-        const nominalPotBpjsKes = 41811;
-        const nominalPotBpjsJht = 83623;
-        const nominalPotBpjsJp = 41811;
-        const totalPotongan =
-          nominalPotSppbg +
-          nominalPotBpjsKes +
-          nominalPotBpjsJht +
-          nominalPotBpjsJp;
-
-        const gajiBersih = totalPendapatan - totalPotongan;
-
-        document.getElementById("txtHariMasuk").textContent = totalHariMasuk;
-        document.getElementById("valGajiPokok").textContent = formatRupiah(nominalGajiPokok);
-        document.getElementById("txtLongtrip").textContent = countLongtripJagaMalam;
-        document.getElementById("valLongtrip").textContent = formatRupiah(nominalLongtrip);
-        document.getElementById("txtOvertime").textContent = totalJamOvertime;
-        document.getElementById("valOvertime").textContent = formatRupiah(nominalOvertime);
-        document.getElementById("valTotalPendapatan").textContent = formatRupiah(totalPendapatan);
-
-        document.getElementById("txtHariSppbg").textContent = totalHariMasuk;
-        document.getElementById("valPotSppbg").textContent = "-" + formatRupiah(nominalPotSppbg);
-        document.getElementById("valPotKes").textContent = "-" + formatRupiah(nominalPotBpjsKes);
-        document.getElementById("valPotJht").textContent = "-" + formatRupiah(nominalPotBpjsJht);
-        document.getElementById("valPotJp").textContent = "-" + formatRupiah(nominalPotBpjsJp);
-        document.getElementById("valTotalPotongan").textContent = "-" + formatRupiah(totalPotongan);
-
-        document.getElementById("valGajiBersih").textContent = formatRupiah(gajiBersih);
-
-        hasilBox.style.display = "block";
-      } else {
-        errorBox.textContent = "NIK yang Anda masukkan salah.";
-        errorBox.classList.remove("d-none");
-      }
-    } else {
-      errorBox.textContent = "Data absensi belum tersedia.";
-      errorBox.classList.remove("d-none");
-    }
-  } catch (error) {
-    console.error(error);
-    errorBox.textContent = "Terjadi kesalahan sistem saat memproses data.";
-    errorBox.classList.remove("d-none");
-  }
-});
+      });
     </script>
   </body>
 </html>

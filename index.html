@@ -302,18 +302,8 @@
       };
 
       const namaBulan = [
-        "Januari",
-        "Februari",
-        "Maret",
-        "April",
-        "Mei",
-        "Juni",
-        "Juli",
-        "Agustus",
-        "September",
-        "Oktober",
-        "November",
-        "Desember",
+        "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+        "Juli", "Agustus", "September", "Oktober", "November", "Desember"
       ];
 
       function parseTanggal(tglStr) {
@@ -353,74 +343,45 @@
         return `${jam}:${menit.toString().padStart(2, "0")}`;
       }
 
-      // LOGIKA REVISI: Berbasis Tanggal Anchor & Toleransi Lintas Hari (+1 Hari)
-function perbaikiShiftPasanganStrict(arrayRaw) {
-  if (!arrayRaw || arrayRaw.length === 0) return [];
+      // =========================================================================
+      // 1. LETAKKAN FUNGSI PENGOLAH DATA FIRESTORE DI SINI
+      // =========================================================================
+      function olahDataFirebaseFixed(arrayFirebase) {
+        if (!arrayFirebase || arrayFirebase.length === 0) return [];
 
-  // 1. Kelompokkan data mentah berdasarkan Tanggal
-  let mapTanggal = {};
-  arrayRaw.forEach((item) => {
-    mapTanggal[item.tanggal] = item;
-  });
+        let data = JSON.parse(JSON.stringify(arrayFirebase));
 
-  // 2. Dapatkan daftar tanggal yang terurut
-  let daftarTanggal = Object.keys(mapTanggal).sort(
-    (a, b) => parseTanggal(a) - parseTanggal(b)
-  );
+        for (let i = 0; i < data.length; i++) {
+          let current = data[i];
 
-  let hasil = [];
+          // BILA HARI INI PUNYA START TAPI TIDAK PUNYA FINISH
+          if (current.dari && current.dari !== "-" && (!current.sampai || current.sampai === "-")) {
+            let next = data[i + 1];
 
-  for (let i = 0; i < daftarTanggal.length; i++) {
-    let tglSekarang = daftarTanggal[i];
-    let dataHariIni = { ...mapTanggal[tglSekarang] };
+            if (next && next.sampai && next.sampai !== "-") {
+              // 1. Tarik jam FINISH dari hari besok untuk melengkapi hari ini
+              current.sampai = next.sampai;
+              current.totalJam = hitungTotalJam(current.dari, current.sampai);
 
-    let jamStart = dataHariIni.dari && dataHariIni.dari !== "-" ? dataHariIni.dari : null;
-    let jamFinish = dataHariIni.sampai && dataHariIni.sampai !== "-" ? dataHariIni.sampai : null;
+              // 2. Pindahkan keterangan jika ada
+              if (next.keterangan && next.keterangan !== "-") {
+                current.keterangan = next.keterangan;
+              }
 
-    // JIKA ADA START TAPI TIDAK ADA FINISH DI TANGGAL YANG SAMA
-    if (jamStart && !jamFinish) {
-      let tglBerikutnya = i + 1 < daftarTanggal.length ? daftarTanggal[i + 1] : null;
-
-      if (tglBerikutnya) {
-        let dataBesok = mapTanggal[tglBerikutnya];
-        let jamFinishBesok = dataBesok.sampai && dataBesok.sampai !== "-" ? dataBesok.sampai : null;
-
-        // Cek apakah di tanggal besok ada Finish Shift
-        if (jamFinishBesok) {
-          // Ambil Finish Shift besok untuk dipasangkan ke Start hari ini
-          dataHariIni.sampai = jamFinishBesok;
-          dataHariIni.totalJam = hitungTotalJam(jamStart, jamFinishBesok);
-
-          // Gabungkan keterangan (misal: Longtrip / Overtime)
-          if (dataBesok.keterangan && dataBesok.keterangan !== "-") {
-            if (!dataHariIni.keterangan || dataHariIni.keterangan === "-") {
-              dataHariIni.keterangan = dataBesok.keterangan;
-            } else if (!dataHariIni.keterangan.includes(dataBesok.keterangan)) {
-              dataHariIni.keterangan += " " + dataBesok.keterangan;
+              // 3. Pindahkan jam START hari besok ke kolom FINISH hari besok
+              if (next.dari && next.dari !== "-") {
+                next.sampai = next.dari;
+              } else {
+                next.sampai = "-";
+              }
             }
+          } else {
+            current.totalJam = hitungTotalJam(current.dari, current.sampai);
           }
-
-          // KOSONGKAN/BERSIHKAN Finish Shift di hari besok agar tidak terhitung ganda
-          dataBesok.sampai = "-";
-          dataBesok.totalJam = "-";
-        } else {
-          dataHariIni.totalJam = "-";
         }
-      } else {
-        dataHariIni.totalJam = "-";
+
+        return data;
       }
-    } else {
-      dataHariIni.totalJam = hitungTotalJam(dataHariIni.dari, dataHariIni.sampai);
-    }
-
-    // Hanya masukkan baris jika memiliki setidaknya jam Start atau jam Finish
-    if ((dataHariIni.dari && dataHariIni.dari !== "-") || (dataHariIni.sampai && dataHariIni.sampai !== "-")) {
-      hasil.push(dataHariIni);
-    }
-  }
-
-  return hasil;
-}
 
       async function muatDaftarNamaOtomatis() {
         const dropdown = document.getElementById("inputNama");
@@ -468,8 +429,7 @@ function perbaikiShiftPasanganStrict(arrayRaw) {
             const dbData = docSnap.data();
 
             if (dbData.nik === nik) {
-              document.getElementById("namaKaryawanJudul").textContent =
-                dbData.nama;
+              document.getElementById("namaKaryawanJudul").textContent = dbData.nama;
               let arrayDetail = JSON.parse(dbData.detail);
 
               if (arrayDetail.length === 0) {
@@ -478,19 +438,15 @@ function perbaikiShiftPasanganStrict(arrayRaw) {
                 return;
               }
 
-              // 1. Urutkan berdasarkan tanggal
+              // Sort berdasarkan tanggal dulu
               arrayDetail.sort(
                 (a, b) => parseTanggal(a.tanggal) - parseTanggal(b.tanggal)
               );
 
-              // 2. Pasangkan START & FINISH berdasarkan logika urutan
-              arrayDetail = perbaikiShiftPasanganStrict(arrayDetail);
-
-              if (arrayDetail.length === 0) {
-                errorBox.textContent = "Tidak ada rekaman data yang dapat diproses.";
-                errorBox.classList.remove("d-none");
-                return;
-              }
+              // =========================================================================
+              // 2. PANGGUL FUNGSI PENGOLAH DATA DI SINI
+              // =========================================================================
+              arrayDetail = olahDataFirebaseFixed(arrayDetail);
 
               let startDate = parseTanggal(arrayDetail[0].tanggal);
               let endDate = parseTanggal(
@@ -505,7 +461,6 @@ function perbaikiShiftPasanganStrict(arrayRaw) {
               let barisHTML = "";
               let currDate = new Date(startDate);
 
-              // 3. Render ke Tabel HTML
               while (currDate <= endDate) {
                 let tglKey = formatTanggal(currDate);
                 let dataHariIni = mapAbsen[tglKey];
@@ -536,9 +491,7 @@ function perbaikiShiftPasanganStrict(arrayRaw) {
 
               tableBody.innerHTML = barisHTML;
 
-              // ============================================
-              // RUMUS PERHITUNGAN GAJI
-              // ============================================
+              // RUMUS GAJI (Sama seperti sebelumnya)
               let totalHariMasuk = arrayDetail.filter(h => h.dari && h.dari !== "-").length;
               let countLongtripJagaMalam = 0;
               let totalJamOvertime = 0;
@@ -575,7 +528,6 @@ function perbaikiShiftPasanganStrict(arrayRaw) {
 
               const gajiBersih = totalPendapatan - totalPotongan;
 
-              // Render Angka ke UI
               document.getElementById("txtHariMasuk").textContent = totalHariMasuk;
               document.getElementById("valGajiPokok").textContent = formatRupiah(nominalGajiPokok);
               document.getElementById("txtLongtrip").textContent = countLongtripJagaMalam;

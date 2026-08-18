@@ -347,41 +347,92 @@
       // 1. LETAKKAN FUNGSI PENGOLAH DATA FIRESTORE DI SINI
       // =========================================================================
       function olahDataFirebaseFixed(arrayFirebase) {
-        if (!arrayFirebase || arrayFirebase.length === 0) return [];
+  if (!arrayFirebase || arrayFirebase.length === 0) return [];
 
-        let data = JSON.parse(JSON.stringify(arrayFirebase));
+  // 1. Ekstrak seluruh event (Start / Finish) menjadi satu barisan antrean
+  let events = [];
+  arrayFirebase.forEach((row) => {
+    if (row.dari && row.dari !== "-") {
+      events.push({
+        tipe: "START",
+        tanggal: row.tanggal,
+        jam: row.dari,
+        keterangan: row.keterangan || "-"
+      });
+    }
+    if (row.sampai && row.sampai !== "-") {
+      events.push({
+        tipe: "FINISH",
+        tanggal: row.tanggal,
+        jam: row.sampai,
+        keterangan: row.keterangan || "-"
+      });
+    }
+  });
 
-        for (let i = 0; i < data.length; i++) {
-          let current = data[i];
+  let hasilMap = {};
 
-          // BILA HARI INI PUNYA START TAPI TIDAK PUNYA FINISH
-          if (current.dari && current.dari !== "-" && (!current.sampai || current.sampai === "-")) {
-            let next = data[i + 1];
+  // Inisialisasi struktur tanggal dasar dari array asli
+  arrayFirebase.forEach((row) => {
+    hasilMap[row.tanggal] = {
+      tanggal: row.tanggal,
+      dari: "-",
+      sampai: "-",
+      totalJam: "-",
+      keterangan: "-"
+    };
+  });
 
-            if (next && next.sampai && next.sampai !== "-") {
-              // 1. Tarik jam FINISH dari hari besok untuk melengkapi hari ini
-              current.sampai = next.sampai;
-              current.totalJam = hitungTotalJam(current.dari, current.sampai);
+  let idx = 0;
 
-              // 2. Pindahkan keterangan jika ada
-              if (next.keterangan && next.keterangan !== "-") {
-                current.keterangan = next.keterangan;
-              }
+  // 2. Pasangkan START -> FINISH berikutnya secara berurutan
+  while (idx < events.length) {
+    let curr = events[idx];
 
-              // 3. Pindahkan jam START hari besok ke kolom FINISH hari besok
-              if (next.dari && next.dari !== "-") {
-                next.sampai = next.dari;
-              } else {
-                next.sampai = "-";
-              }
-            }
-          } else {
-            current.totalJam = hitungTotalJam(current.dari, current.sampai);
-          }
-        }
+    if (curr.tipe === "START") {
+      let next = events[idx + 1];
 
-        return data;
+      if (next && next.tipe === "FINISH") {
+        // Ambil keterangan yang tidak kosong (prioritaskan dari Finish atau Start)
+        let ket = next.keterangan !== "-" ? next.keterangan : curr.keterangan;
+
+        hasilMap[curr.tanggal] = {
+          tanggal: curr.tanggal, // Tanggal shift diikat pada tanggal START
+          dari: curr.jam,
+          sampai: next.jam,
+          totalJam: hitungTotalJam(curr.jam, next.jam),
+          keterangan: ket
+        };
+        idx += 2; // Berhasil dipasangkan, lanjut ke event ke-3
+      } else {
+        // Jika START bertemu START (lupa Finish)
+        hasilMap[curr.tanggal] = {
+          tanggal: curr.tanggal,
+          dari: curr.jam,
+          sampai: "-",
+          totalJam: "-",
+          keterangan: curr.keterangan
+        };
+        idx += 1;
       }
+    } else {
+      // Jika FINISH tanpa START sebelumnya (lupa Start)
+      if (!hasilMap[curr.tanggal] || hasilMap[curr.tanggal].dari === "-") {
+        hasilMap[curr.tanggal] = {
+          tanggal: curr.tanggal,
+          dari: "-",
+          sampai: curr.jam,
+          totalJam: "-",
+          keterangan: curr.keterangan
+        };
+      }
+      idx += 1;
+    }
+  }
+
+  // 3. Kembalikan menjadi array terurut
+  return Object.values(hasilMap);
+}
 
       async function muatDaftarNamaOtomatis() {
         const dropdown = document.getElementById("inputNama");

@@ -383,51 +383,59 @@ function hitungTotalJam(jamMulai, jamAkhir) {
 }
 
 // Helper: Memperbaiki & menggabungkan shift yang lewat jam 24:00
+// Helper: Menghitung selisih jam & menit (Mendukung Lintas Hari)
+function hitungTotalJam(jamMulai, jamAkhir) {
+  if (!jamMulai || !jamAkhir || jamMulai === "-" || jamAkhir === "-") return "-";
+  
+  let [h1, m1] = jamMulai.split(":").map(Number);
+  let [h2, m2] = jamAkhir.split(":").map(Number);
+  
+  let startMin = h1 * 60 + m1;
+  let endMin = h2 * 60 + m2;
+  
+  // Jika jam keluar lebih kecil dari jam masuk, berarti lewat tengah malam (+24 jam)
+  if (endMin < startMin) {
+    endMin += 24 * 60;
+  }
+  
+  let diff = endMin - startMin;
+  let jam = Math.floor(diff / 60);
+  let menit = diff % 60;
+  
+  return `${jam}:${menit.toString().padStart(2, "0")}`;
+}
+
+// Logika Baru: Memperbaiki Pasangan Start Shift & Finish Shift
 function perbaikiShiftLintasHari(arrayDetail) {
   let hasil = [];
-  
+
   for (let i = 0; i < arrayDetail.length; i++) {
     let item = { ...arrayDetail[i] };
+    
+    // Cek jika jam 'sampai' berada di bawah jam 05:00 pagi dan jam 'dari' berada di atas 05:00 pagi
+    // Ini tanda khas bahwa jam 'sampai' tersebut sebenarnya milik Start Shift hari sebelumnya
     let [hIn] = (item.dari || "0:0").split(":").map(Number);
     let [hOut] = (item.sampai || "0:0").split(":").map(Number);
 
-    // KASUS 1: Keluar di dini hari (00:00 - 05:00) & Jam masuknya juga pagi/siang (>= 05:00)
-    // Berarti ini adalah "Jam Keluar" milik hari sebelumnya yang nyasar ke tanggal hari ini
     if (hOut < 5 && hIn >= 5 && hasil.length > 0) {
       let hariSebelumnya = hasil[hasil.length - 1];
       
-      // Pasangkan jam keluar ini ke hari sebelumnya yang belum punya jam keluar
-      if (!hariSebelumnya.sampai || hariSebelumnya.sampai === "-") {
-        hariSebelumnya.sampai = item.sampai;
-        hariSebelumnya.totalJam = hitungTotalJam(hariSebelumnya.dari, hariSebelumnya.sampai);
-        
-        // Bersihkan jam keluar dari item hari ini
-        item.sampai = "-";
-        item.totalJam = "-";
-      }
+      // Pindahkan jam 'sampai' (misal 1:06) ke baris hari sebelumnya
+      hariSebelumnya.sampai = item.sampai;
+      hariSebelumnya.totalJam = hitungTotalJam(hariSebelumnya.dari, hariSebelumnya.sampai);
+
+      // Baris hari ini dikosongkan jam 'sampai'-nya, dan simpan jam 'dari'-nya sendiri
+      item.sampai = "-";
+      item.totalJam = "-";
+    } else if (item.dari && (!item.sampai || item.sampai === "-")) {
+      // Jika jam 'sampai' belum ada, hitung dengan "-"
+      item.totalJam = "-";
+    } else {
+      // Hitung normal
+      item.totalJam = hitungTotalJam(item.dari, item.sampai);
     }
 
     hasil.push(item);
-  }
-
-  // KASUS 2: Pengecekan ulang jika ada hari yang jam kerjanya kosong tapi jam keluarnya ketarik dari esok hari
-  for (let i = 0; i < hasil.length - 1; i++) {
-    let curr = hasil[i];
-    let next = hasil[i + 1];
-
-    if ((!curr.sampai || curr.sampai === "-") && next) {
-      let [nextIn] = (next.dari || "0:0").split(":").map(Number);
-      let [nextOut] = (next.sampai || "0:0").split(":").map(Number);
-
-      // Jika hari esok punya jam keluar dini hari (< 05:00) dan jam masuknya normal/pagi
-      if (nextOut < 5 && nextIn >= 5) {
-        curr.sampai = next.sampai;
-        curr.totalJam = hitungTotalJam(curr.dari, curr.sampai);
-
-        next.sampai = "-";
-        next.totalJam = hitungTotalJam(next.dari, next.sampai);
-      }
-    }
   }
 
   return hasil;

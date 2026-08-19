@@ -8,19 +8,15 @@
       href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
       rel="stylesheet"
     />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+    />
     <style>
-      body {
-      background-image: url('');
-      background-attachment: fixed;
-      background-size: cover;
-      background-position: center;
-      background-repeat: no-repeat;
-      min-height: 100vh;
-    }
-      
       body {
         background-color: #f4f7f6;
         font-family: Arial, sans-serif;
+        min-height: 100vh;
       }
       .card {
         border-radius: 12px;
@@ -101,16 +97,16 @@
           <!-- Area Hasil Data -->
           <div id="hasilData" class="result-box">
 
-            <!-- Box Status Giliran Tugas (Default: d-none / tersembunyi) -->
-<div id="boxGiliranTugas" class="alert alert-info d-none mb-3 shadow-sm" role="alert">
-    <div class="d-flex align-items-center">
-        <i class="bi bi-calendar-check-fill fs-3 me-3"></i>
-        <div>
-            <h6 class="alert-heading fw-bold mb-1" id="judulGiliran">Informasi Giliran Tugas</h6>
-            <p class="mb-0" id="pesanGiliran">-</p>
-        </div>
-    </div>
-</div>
+            <!-- Box Status Giliran Tugas -->
+            <div id="boxGiliranTugas" class="alert alert-info d-none mb-3 shadow-sm" role="alert">
+                <div class="d-flex align-items-center">
+                    <i class="bi bi-calendar-check-fill fs-3 me-3"></i>
+                    <div>
+                        <h6 class="alert-heading fw-bold mb-1" id="judulGiliran">Informasi Giliran Tugas</h6>
+                        <p class="mb-0" id="pesanGiliran">-</p>
+                    </div>
+                </div>
+            </div>
                         
             <!-- 1. Tabel Rincian Absensi Harian -->
             <div class="card p-4 mb-4">
@@ -314,6 +310,48 @@
       const app = initializeApp(firebaseConfig);
       const db = getFirestore(app);
 
+      // =========================================================================
+      // DATA ACUAN ROTASI GILIRAN TUGAS
+      // =========================================================================
+      const TANGGAL_ACUAN_AWAL = new Date("2026-08-19");
+
+      const daftarUrutanKaryawan = [
+        "Muhammad Nasrullah", "Muhammad Ibadurrahman", "Rofiul Iman", "Armi Iqbal Priambudi",
+        "Muchamad Rifai", "Ahmad Fajar", "Ahmad Abdul Nur Rohman", "Kulle",
+        "Munajir", "Muhammad Deristianto", "Muhardi", "Rahmadiansyah",
+        "Muhammad Irfan Mahdi", "Rudi Sutono", "Saini", "Lukman",
+        "Ade Sofyanto", "Andre", "Viranus Deodatus", "Jumha Setiawan",
+        "Lukman Saeful", "La Basir", "Akhmad Ghazali", "Herwan",
+        "Seping", "Jumardin", "Suyanto", "Sahrul",
+        "Baharuddin", "La Hera", "Muhammad Doel Galih", "Muhammad Marcellino",
+        "Aris", "Muhammad Hasbi", "Meyrubin Alfiyanto", "Nana Rukmana"
+      ];
+
+      function cekGiliranTugasKaryawan(namaKaryawan, tglAwalFilter, tglAkhirFilter) {
+        let idxKaryawan = daftarUrutanKaryawan.indexOf(namaKaryawan);
+        if (idxKaryawan === -1) return [];
+
+        let totalOrang = daftarUrutanKaryawan.length;
+        let tanggalMendatang = [];
+
+        let curr = new Date(tglAwalFilter);
+        while (curr <= tglAkhirFilter) {
+          let selisihMilikHari = Math.floor((curr - TANGGAL_ACUAN_AWAL) / (1000 * 60 * 60 * 24));
+          
+          if (selisihMilikHari >= 0) {
+            let idxPetugasHariIni = selisihMilikHari % totalOrang;
+            if (idxPetugasHariIni === idxKaryawan) {
+              tanggalMendatang.push(formatTanggal(curr));
+            }
+          }
+          curr.setDate(curr.getDate() + 1);
+        }
+        return tanggalMendatang;
+      }
+
+      // =========================================================================
+      // HELPER FUNCTIONS
+      // =========================================================================
       const formatRupiah = (angka) => {
         return new Intl.NumberFormat("id-ID", {
           style: "currency",
@@ -363,65 +401,6 @@
         
         return `${jam}:${menit.toString().padStart(2, "0")}`;
       }
-
-      // =========================================================================
-      // 1. LETAKKAN FUNGSI PENGOLAH DATA FIRESTORE DI SINI
-      // =========================================================================
-      function olahDataFirebaseFixed(arrayFirebase) {
-  if (!arrayFirebase || arrayFirebase.length === 0) return [];
-
-  let data = JSON.parse(JSON.stringify(arrayFirebase));
-
-  // STEP 1: Urai jam Finish yang "salah tempat" (Finish Dini Hari < Start Pagi)
-  for (let i = 0; i < data.length; i++) {
-    let current = data[i];
-
-    if (current.dari && current.sampai && current.dari !== "-" && current.sampai !== "-") {
-      let [hStart, mStart] = current.dari.split(":").map(Number);
-      let [hEnd, mEnd] = current.sampai.split(":").map(Number);
-
-      let minStart = hStart * 60 + mStart;
-      let minEnd = hEnd * 60 + mEnd;
-
-      // Jika Finish dipencet di bawah jam 05:00 Dini Hari (minEnd < 300)
-      // DAN Start dipencet setelah jam 05:00 Pagi (minStart >= 300)
-      if (minEnd < 300 && minStart >= 300) {
-        // Berarti 'sampai' (1:06) ini ADALAH Finish milik HARI SEBELUMNYA (i - 1)
-        if (i > 0) {
-          let prev = data[i - 1];
-          // Pindahkan 1:06 ke hari sebelumnya
-          prev.sampai = current.sampai;
-          if (current.keterangan && current.keterangan !== "-") {
-            prev.keterangan = current.keterangan;
-          }
-        }
-        // Kosongkan 'sampai' hari ini karena jam 1:06 sudah dipakai hari sebelumnya
-        current.sampai = "-";
-      }
-    }
-  }
-
-  // STEP 2: Pasangkan Start yang masih kosong Finish-nya dengan Finish hari berikutnya
-  for (let i = 0; i < data.length; i++) {
-    let current = data[i];
-
-    if (current.dari && current.dari !== "-" && (!current.sampai || current.sampai === "-")) {
-      let next = data[i + 1];
-      if (next && next.sampai && next.sampai !== "-") {
-        current.sampai = next.sampai;
-        if (next.keterangan && next.keterangan !== "-") {
-          current.keterangan = next.keterangan;
-        }
-        next.sampai = "-";
-      }
-    }
-
-    // Hitung total jam berdasarkan pasangan yang sudah benar
-    current.totalJam = hitungTotalJam(current.dari, current.sampai);
-  }
-
-  return data;
-}
 
       async function muatDaftarNamaOtomatis() {
         const dropdown = document.getElementById("inputNama");
@@ -483,93 +462,34 @@
                 (a, b) => parseTanggal(a.tanggal) - parseTanggal(b.tanggal)
               );
 
-              // =========================================================================
-// A. TARUH DATA ACUAN DI PALING ATAS (Luar fungsi rendering/fetch data)
-// =========================================================================
-const TANGGAL_ACUAN_AWAL = new Date("2026-08-19");
-
-const daftarUrutanKaryawan = [
-  "Muhammad Nasrullah", "Muhammad Ibadurrahman", "Rofiul Iman", "Armi Iqbal Priambudi",
-  "Muchamad Rifai", "Ahmad Fajar", "Ahmad Abdul Nur Rohman", "Kulle",
-  "Munajir", "Muhammad Deristianto", "Muhardi", "Rahmadiansyah",
-  "Muhammad Irfan Mahdi", "Rudi Sutono", "Saini", "Lukman",
-  "Ade Sofyanto", "Andre", "Viranus Deodatus", "Jumha Setiawan",
-  "Lukman Saeful", "La Basir", "Akhmad Ghazali", "Herwan",
-  "Seping", "Jumardin", "Suyanto", "Sahrul",
-  "Baharuddin", "La Hera", "Muhammad Doel Galih", "Muhammad Marcellino",
-  "Aris", "Muhammad Hasbi", "Meyrubin Alfiyanto", "Nana Rukmana"
-];
-
-// Fungsi Penghitung Rotasi (bisa ditaruh di luar juga)
-function cekGiliranTugasKaryawan(namaKaryawan, tglAwalFilter, tglAkhirFilter) {
-  let idxKaryawan = daftarUrutanKaryawan.indexOf(namaKaryawan);
-  if (idxKaryawan === -1) return [];
-
-  let totalOrang = daftarUrutanKaryawan.length;
-  let tanggalMendatang = [];
-
-  let curr = new Date(tglAwalFilter);
-  while (curr <= tglAkhirFilter) {
-    let selisihMilikHari = Math.floor((curr - TANGGAL_ACUAN_AWAL) / (1000 * 60 * 60 * 24));
-    
-    if (selisihMilikHari >= 0) {
-      let idxPetugasHariIni = selisihMilikHari % totalOrang;
-      if (idxPetugasHariIni === idxKaryawan) {
-        tanggalMendatang.push(formatTanggal(curr));
-      }
-    }
-    curr.setDate(curr.getDate() + 1);
-  }
-  return tanggalMendatang;
-}
-
-
-// =========================================================================
-// B. TARUH LOGIKA PENAMPIL ALERT DI DALAM FUNGSI UTAMA (Di dekat loop tabel)
-// =========================================================================
-// (Misal di dalam fungsi proses/fetch data yang menampilkan tabel):
-
-// ... kode sorting arrayDetail Anda ...
-
-let startDate = parseTanggal(arrayDetail[0].tanggal);
-let endDate = parseTanggal(arrayDetail[arrayDetail.length - 1].tanggal);
-
-// --- [SISIPKAN DI SINI] ---
-// Ambil nama karyawan yang sedang aktif/login
-let namaKaryawanLogin = arrayDetail[0].nama || "Muhammad Nasrullah"; // sesuaikan variabel nama karyawan Anda
-
-let jadwalDapat = cekGiliranTugasKaryawan(namaKaryawanLogin, startDate, endDate);
-let boxElement = document.getElementById("boxGiliranTugas");
-let pesanElement = document.getElementById("pesanGiliran");
-
-if (jadwalDapat.length > 0) {
-  boxElement.classList.remove("d-none");
-  boxElement.className = "alert alert-warning border-start border-4 border-warning mb-3 shadow-sm";
-  pesanElement.innerHTML = `Anda mendapatkan <strong>Giliran Tugas Rotasi</strong> pada tanggal: <strong>${jadwalDapat.join(", ")}</strong>`;
-} else {
-  boxElement.classList.remove("d-none");
-  boxElement.className = "alert alert-light border mb-3 shadow-sm text-muted";
-  pesanElement.innerHTML = `Tidak ada jadwal giliran tugas untuk Anda pada rentang tanggal ini.`;
-}
-// --------------------------
-
-let mapAbsen = {};
-arrayDetail.forEach((hari) => {
-  mapAbsen[hari.tanggal] = hari;
-});
-
-// ... sisa kode loop while (currDate <= endDate) dan tableBody.innerHTML ...
-
-              // =========================================================================
-              // 2. PANGGUL FUNGSI PENGOLAH DATA DI SINI
-              // =========================================================================
-              // arrayDetail = olahDataFirebaseFixed(arrayDetail);
-
               let startDate = parseTanggal(arrayDetail[0].tanggal);
               let endDate = parseTanggal(
                 arrayDetail[arrayDetail.length - 1].tanggal
               );
 
+              // =========================================================================
+              // LOGIKA BENNER GILIRAN TUGAS
+              // =========================================================================
+              let namaKaryawanLogin = dbData.nama || nama;
+              let jadwalDapat = cekGiliranTugasKaryawan(namaKaryawanLogin, startDate, endDate);
+              let boxElement = document.getElementById("boxGiliranTugas");
+              let pesanElement = document.getElementById("pesanGiliran");
+
+              if (boxElement && pesanElement) {
+                if (jadwalDapat.length > 0) {
+                  boxElement.classList.remove("d-none");
+                  boxElement.className = "alert alert-warning border-start border-4 border-warning mb-3 shadow-sm";
+                  pesanElement.innerHTML = `Anda mendapatkan <strong>Giliran Tugas Rotasi</strong> pada tanggal: <strong>${jadwalDapat.join(", ")}</strong>`;
+                } else {
+                  boxElement.classList.remove("d-none");
+                  boxElement.className = "alert alert-light border mb-3 shadow-sm text-muted";
+                  pesanElement.innerHTML = `Tidak ada jadwal giliran tugas untuk Anda pada rentang tanggal ini.`;
+                }
+              }
+
+              // =========================================================================
+              // RENDERING TABEL ABSENSI
+              // =========================================================================
               let mapAbsen = {};
               arrayDetail.forEach((hari) => {
                 mapAbsen[hari.tanggal] = hari;
@@ -608,7 +528,9 @@ arrayDetail.forEach((hari) => {
 
               tableBody.innerHTML = barisHTML;
 
-              // RUMUS GAJI (Sama seperti sebelumnya)
+              // =========================================================================
+              // PERHITUNGAN GAJI
+              // =========================================================================
               let totalHariMasuk = arrayDetail.filter(h => h.dari && h.dari !== "-").length;
               let countLongtripJagaMalam = 0;
               let totalJamOvertime = 0;

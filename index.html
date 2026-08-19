@@ -310,44 +310,44 @@
       const app = initializeApp(firebaseConfig);
       const db = getFirestore(app);
 
-      // =========================================================================
-      // DATA ACUAN ROTASI GILIRAN TUGAS
-      // =========================================================================
-      const TANGGAL_ACUAN_AWAL = new Date("2026-08-19");
+      // 1. Tanggal Acuan
+const TANGGAL_ACUAN_AWAL = new Date(2026, 7, 19); // Bulan 7 = Agustus (0-indexed)
 
-      const daftarUrutanKaryawan = [
-        "Muhammad Nasrullah", "Muhammad Ibadurrahman", "Rofiul Iman", "Armi Iqbal Priambudi",
-        "Muchamad Rifai", "Ahmad Fajar", "Ahmad Abdul Nur Rohman", "Kulle",
-        "Munajir", "Muhammad Deristianto", "Muhardi", "Rahmadiansyah",
-        "Muhammad Irfan Mahdi", "Rudi Sutono", "Saini", "Lukman",
-        "Ade Sofyanto", "Andre", "Viranus Deodatus", "Jumha Setiawan",
-        "Lukman Saeful", "La Basir", "Akhmad Ghazali", "Herwan",
-        "Seping", "Jumardin", "Suyanto", "Sahrul",
-        "Baharuddin", "La Hera", "Muhammad Doel Galih", "Muhammad Marcellino",
-        "Aris", "Muhammad Hasbi", "Meyrubin Alfiyanto", "Nana Rukmana"
-      ];
+// 2. Daftar Nama Karyawan (Sesuai Urutan Rotasi)
+const daftarUrutanKaryawan = [
+  "Muhammad Nasrullah", "Muhammad Ibadurrahman", "Rofiul Iman", "Armi Iqbal Priambudi",
+  "Muchamad Rifai", "Ahmad Fajar", "Ahmad Abdul Nur Rohman", "Kulle",
+  "Munajir", "Muhammad Deristianto", "Muhardi", "Rahmadiansyah",
+  "Muhammad Irfan Mahdi", "Rudi Sutono", "Saini", "Lukman",
+  "Ade Sofyanto", "Andre", "Viranus Deodatus", "Jumha Setiawan",
+  "Lukman Saeful", "La Basir", "Akhmad Ghazali", "Herwan",
+  "Seping", "Jumardin", "Suyanto", "Sahrul",
+  "Baharuddin", "La Hera", "Muhammad Doel Galih", "Muhammad Marcellino",
+  "Aris", "Muhammad Hasbi", "Meyrubin Alfiyanto", "Nana Rukmana"
+];
 
-      function cekGiliranTugasKaryawan(namaKaryawan, tglAwalFilter, tglAkhirFilter) {
-        let idxKaryawan = daftarUrutanKaryawan.indexOf(namaKaryawan);
-        if (idxKaryawan === -1) return [];
+// 3. Fungsi Pengecekan Giliran
+function cekGiliranTugasKaryawan(namaKaryawan, tglAwalFilter, tglAkhirFilter) {
+  let idxKaryawan = daftarUrutanKaryawan.indexOf(namaKaryawan);
+  if (idxKaryawan === -1) return [];
 
-        let totalOrang = daftarUrutanKaryawan.length;
-        let tanggalMendatang = [];
+  let totalOrang = daftarUrutanKaryawan.length;
+  let tanggalMendatang = [];
 
-        let curr = new Date(tglAwalFilter);
-        while (curr <= tglAkhirFilter) {
-          let selisihMilikHari = Math.floor((curr - TANGGAL_ACUAN_AWAL) / (1000 * 60 * 60 * 24));
-          
-          if (selisihMilikHari >= 0) {
-            let idxPetugasHariIni = selisihMilikHari % totalOrang;
-            if (idxPetugasHariIni === idxKaryawan) {
-              tanggalMendatang.push(formatTanggal(curr));
-            }
-          }
-          curr.setDate(curr.getDate() + 1);
-        }
-        return tanggalMendatang;
+  let curr = new Date(tglAwalFilter);
+  while (curr <= tglAkhirFilter) {
+    let selisihMilikHari = Math.round((curr - TANGGAL_ACUAN_AWAL) / (1000 * 60 * 60 * 24));
+    
+    if (selisihMilikHari >= 0) {
+      let idxPetugasHariIni = selisihMilikHari % totalOrang;
+      if (idxPetugasHariIni === idxKaryawan) {
+        tanggalMendatang.push(formatTanggal(curr));
       }
+    }
+    curr.setDate(curr.getDate() + 1);
+  }
+  return tanggalMendatang;
+}
 
       // =========================================================================
       // HELPER FUNCTIONS
@@ -461,11 +461,17 @@
               arrayDetail.sort(
                 (a, b) => parseTanggal(a.tanggal) - parseTanggal(b.tanggal)
               );
-
+              
               let startDate = parseTanggal(arrayDetail[0].tanggal);
-              let endDate = parseTanggal(
-                arrayDetail[arrayDetail.length - 1].tanggal
-              );
+let endDate = parseTanggal(arrayDetail[arrayDetail.length - 1].tanggal);
+
+// Pastikan endDate minimal sampai Hari Ini agar giliran tugas hari ini tetap dicek
+let hariIni = new Date();
+hariIni.setHours(0, 0, 0, 0);
+
+if (endDate < hariIni) {
+  endDate = hariIni;
+}
 
               // =========================================================================
               // LOGIKA BENNER GILIRAN TUGAS

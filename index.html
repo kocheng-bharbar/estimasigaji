@@ -484,6 +484,83 @@
               );
 
               // =========================================================================
+// A. TARUH DATA ACUAN DI PALING ATAS (Luar fungsi rendering/fetch data)
+// =========================================================================
+const TANGGAL_ACUAN_AWAL = new Date("2026-08-19");
+
+const daftarUrutanKaryawan = [
+  "Muhammad Nasrullah", "Muhammad Ibadurrahman", "Rofiul Iman", "Armi Iqbal Priambudi",
+  "Muchamad Rifai", "Ahmad Fajar", "Ahmad Abdul Nur Rohman", "Kulle",
+  "Munajir", "Muhammad Deristianto", "Muhardi", "Rahmadiansyah",
+  "Muhammad Irfan Mahdi", "Rudi Sutono", "Saini", "Lukman",
+  "Ade Sofyanto", "Andre", "Viranus Deodatus", "Jumha Setiawan",
+  "Lukman Saeful", "La Basir", "Akhmad Ghazali", "Herwan",
+  "Seping", "Jumardin", "Suyanto", "Sahrul",
+  "Baharuddin", "La Hera", "Muhammad Doel Galih", "Muhammad Marcellino",
+  "Aris", "Muhammad Hasbi", "Meyrubin Alfiyanto", "Nana Rukmana"
+];
+
+// Fungsi Penghitung Rotasi (bisa ditaruh di luar juga)
+function cekGiliranTugasKaryawan(namaKaryawan, tglAwalFilter, tglAkhirFilter) {
+  let idxKaryawan = daftarUrutanKaryawan.indexOf(namaKaryawan);
+  if (idxKaryawan === -1) return [];
+
+  let totalOrang = daftarUrutanKaryawan.length;
+  let tanggalMendatang = [];
+
+  let curr = new Date(tglAwalFilter);
+  while (curr <= tglAkhirFilter) {
+    let selisihMilikHari = Math.floor((curr - TANGGAL_ACUAN_AWAL) / (1000 * 60 * 60 * 24));
+    
+    if (selisihMilikHari >= 0) {
+      let idxPetugasHariIni = selisihMilikHari % totalOrang;
+      if (idxPetugasHariIni === idxKaryawan) {
+        tanggalMendatang.push(formatTanggal(curr));
+      }
+    }
+    curr.setDate(curr.getDate() + 1);
+  }
+  return tanggalMendatang;
+}
+
+
+// =========================================================================
+// B. TARUH LOGIKA PENAMPIL ALERT DI DALAM FUNGSI UTAMA (Di dekat loop tabel)
+// =========================================================================
+// (Misal di dalam fungsi proses/fetch data yang menampilkan tabel):
+
+// ... kode sorting arrayDetail Anda ...
+
+let startDate = parseTanggal(arrayDetail[0].tanggal);
+let endDate = parseTanggal(arrayDetail[arrayDetail.length - 1].tanggal);
+
+// --- [SISIPKAN DI SINI] ---
+// Ambil nama karyawan yang sedang aktif/login
+let namaKaryawanLogin = arrayDetail[0].nama || "Muhammad Nasrullah"; // sesuaikan variabel nama karyawan Anda
+
+let jadwalDapat = cekGiliranTugasKaryawan(namaKaryawanLogin, startDate, endDate);
+let boxElement = document.getElementById("boxGiliranTugas");
+let pesanElement = document.getElementById("pesanGiliran");
+
+if (jadwalDapat.length > 0) {
+  boxElement.classList.remove("d-none");
+  boxElement.className = "alert alert-warning border-start border-4 border-warning mb-3 shadow-sm";
+  pesanElement.innerHTML = `Anda mendapatkan <strong>Giliran Tugas Rotasi</strong> pada tanggal: <strong>${jadwalDapat.join(", ")}</strong>`;
+} else {
+  boxElement.classList.remove("d-none");
+  boxElement.className = "alert alert-light border mb-3 shadow-sm text-muted";
+  pesanElement.innerHTML = `Tidak ada jadwal giliran tugas untuk Anda pada rentang tanggal ini.`;
+}
+// --------------------------
+
+let mapAbsen = {};
+arrayDetail.forEach((hari) => {
+  mapAbsen[hari.tanggal] = hari;
+});
+
+// ... sisa kode loop while (currDate <= endDate) dan tableBody.innerHTML ...
+
+              // =========================================================================
               // 2. PANGGUL FUNGSI PENGOLAH DATA DI SINI
               // =========================================================================
               // arrayDetail = olahDataFirebaseFixed(arrayDetail);

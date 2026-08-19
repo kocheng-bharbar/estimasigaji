@@ -349,6 +349,16 @@ function cekGiliranTugasKaryawan(namaKaryawan, tglAwalFilter, tglAkhirFilter) {
   return tanggalMendatang;
 }
 
+      function getPetugasHariIni(tanggal = new Date()) {
+  let tglPilihan = new Date(tanggal);
+  tglPilihan.setHours(0, 0, 0, 0);
+  let selisihHari = Math.round((tglPilihan - TANGGAL_ACUAN_AWAL) / (1000 * 60 * 60 * 24));
+  
+  if (selisihHari < 0) return "-";
+  let idxPetugas = selisihHari % daftarUrutanKaryawan.length;
+  return daftarUrutanKaryawan[idxPetugas];
+}
+
       // =========================================================================
       // HELPER FUNCTIONS
       // =========================================================================
@@ -474,24 +484,33 @@ if (endDate < hariIni) {
 }
 
               // =========================================================================
-              // LOGIKA BENNER GILIRAN TUGAS
-              // =========================================================================
-              let namaKaryawanLogin = dbData.nama || nama;
-              let jadwalDapat = cekGiliranTugasKaryawan(namaKaryawanLogin, startDate, endDate);
-              let boxElement = document.getElementById("boxGiliranTugas");
-              let pesanElement = document.getElementById("pesanGiliran");
+// LOGIKA BANNER GILIRAN TUGAS
+// =========================================================================
+let namaKaryawanLogin = dbData.nama || nama;
+let jadwalDapat = cekGiliranTugasKaryawan(namaKaryawanLogin, startDate, endDate);
+let petugasHariIni = getPetugasHariIni(hariIni);
 
-              if (boxElement && pesanElement) {
-                if (jadwalDapat.length > 0) {
-                  boxElement.classList.remove("d-none");
-                  boxElement.className = "alert alert-warning border-start border-4 border-warning mb-3 shadow-sm";
-                  pesanElement.innerHTML = `Anda mendapatkan <strong>Giliran Tugas Rotasi</strong> pada tanggal: <strong>${jadwalDapat.join(", ")}</strong>`;
-                } else {
-                  boxElement.classList.remove("d-none");
-                  boxElement.className = "alert alert-light border mb-3 shadow-sm text-muted";
-                  pesanElement.innerHTML = `Tidak ada jadwal giliran tugas untuk Anda pada rentang tanggal ini.`;
-                }
-              }
+let boxElement = document.getElementById("boxGiliranTugas");
+let pesanElement = document.getElementById("pesanGiliran");
+
+if (boxElement && pesanElement) {
+  boxElement.classList.remove("d-none");
+  boxElement.className = "alert alert-primary border-start border-4 border-primary mb-3 shadow-sm";
+
+  let statusSaya = jadwalDapat.length > 0
+    ? `Jadwal giliran Anda bulan ini: <strong class="text-dark">${jadwalDapat.join(", ")}</strong>`
+    : `Tidak ada jadwal giliran untuk Anda pada rentang tanggal ini.`;
+
+  pesanElement.innerHTML = `
+    <div class="mb-2">
+      📢 <strong>Hari ini (${formatTanggal(hariIni)}) yang bertugas:</strong> 
+      <span class="badge bg-success fs-6 ms-1">${petugasHariIni}</span>
+    </div>
+    <div>
+      👤 <strong>Status Anda (${namaKaryawanLogin}):</strong> ${statusSaya}
+    </div>
+  `;
+}
 
               // =========================================================================
               // RENDERING TABEL ABSENSI

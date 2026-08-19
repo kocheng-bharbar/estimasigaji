@@ -487,8 +487,14 @@ if (endDate < hariIni) {
 // LOGIKA BANNER GILIRAN TUGAS
 // =========================================================================
 let namaKaryawanLogin = dbData.nama || nama;
-let jadwalDapat = cekGiliranTugasKaryawan(namaKaryawanLogin, startDate, endDate);
 let petugasHariIni = getPetugasHariIni(hariIni);
+
+// Batas pencarian giliran mendatang: Dari hari ini sampai 365 hari ke depan
+let tglDepan = new Date(hariIni);
+tglDepan.setDate(tglDepan.getDate() + 365);
+
+// Cari giliran terdekat mulai hari ini
+let jadwalMendatang = cekGiliranTugasKaryawan(namaKaryawanLogin, hariIni, tglDepan);
 
 let boxElement = document.getElementById("boxGiliranTugas");
 let pesanElement = document.getElementById("pesanGiliran");
@@ -497,9 +503,17 @@ if (boxElement && pesanElement) {
   boxElement.classList.remove("d-none");
   boxElement.className = "alert alert-primary border-start border-4 border-primary mb-3 shadow-sm";
 
-  let statusSaya = jadwalDapat.length > 0
-    ? `Jadwal giliran Anda bulan ini: <strong class="text-dark">${jadwalDapat.join(", ")}</strong>`
-    : `Tidak ada jadwal giliran untuk Anda pada rentang tanggal ini.`;
+  // Ambil tanggal giliran terdekat berikutnya
+  let statusSaya = "";
+  if (jadwalMendatang.length > 0) {
+    if (jadwalMendatang[0] === formatTanggal(hariIni)) {
+      statusSaya = `<span class="badge bg-danger fs-6">HARI INI GILIRAN ANDA!</span>`;
+    } else {
+      statusSaya = `Giliran Anda berikutnya pada tanggal: <strong class="text-primary">${jadwalMendatang[0]}</strong>`;
+    }
+  } else {
+    statusSaya = `Nama Anda tidak terdaftar dalam urutan rotasi.`;
+  }
 
   pesanElement.innerHTML = `
     <div class="mb-2">
@@ -507,7 +521,7 @@ if (boxElement && pesanElement) {
       <span class="badge bg-success fs-6 ms-1">${petugasHariIni}</span>
     </div>
     <div>
-      👤 <strong>Pak ${namaKaryawanLogin} </strong> ${statusSaya}
+      👤 <strong>Bapak ${namaKaryawanLogin} </strong> ${statusSaya}
     </div>
   `;
 }

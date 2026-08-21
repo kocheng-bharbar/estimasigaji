@@ -472,62 +472,57 @@ function cekGiliranTugasKaryawan(namaKaryawan, tglAwalFilter, tglAkhirFilter) {
                 (a, b) => parseTanggal(a.tanggal) - parseTanggal(b.tanggal)
               );
               
-              let startDate = parseTanggal(arrayDetail[0].tanggal);
-let endDate = parseTanggal(arrayDetail[arrayDetail.length - 1].tanggal);
-
-// Pastikan endDate minimal sampai Hari Ini agar giliran tugas hari ini tetap dicek
-let hariIni = new Date();
-hariIni.setHours(0, 0, 0, 0);
-
-if (endDate < hariIni) {
-  endDate = hariIni;
-}
+              // 1. Ambil batas tanggal asli dari data absensi untuk TABEL
+              let startDateAsli = parseTanggal(arrayDetail[0].tanggal);
+              let endDateAsli = parseTanggal(
+                arrayDetail[arrayDetail.length - 1].tanggal
+              );
 
               // =========================================================================
-// LOGIKA BANNER GILIRAN TUGAS
-// =========================================================================
-let namaKaryawanLogin = dbData.nama || nama;
-let petugasHariIni = getPetugasHariIni(hariIni);
+              // 2. LOGIKA BANNER GILIRAN TUGAS (Menggunakan variabel tanggal terpisah)
+              // =========================================================================
+              let hariIni = new Date();
+              hariIni.setHours(0, 0, 0, 0);
 
-// Batas pencarian giliran mendatang: Dari hari ini sampai 365 hari ke depan
-let tglDepan = new Date(hariIni);
-tglDepan.setDate(tglDepan.getDate() + 365);
+              let namaKaryawanLogin = dbData.nama || nama;
+              let petugasHariIni = getPetugasHariIni(hariIni);
 
-// Cari giliran terdekat mulai hari ini
-let jadwalMendatang = cekGiliranTugasKaryawan(namaKaryawanLogin, hariIni, tglDepan);
+              // Cari giliran terdekat 365 hari ke depan
+              let tglDepan = new Date(hariIni);
+              tglDepan.setDate(tglDepan.getDate() + 365);
+              let jadwalMendatang = cekGiliranTugasKaryawan(namaKaryawanLogin, hariIni, tglDepan);
 
-let boxElement = document.getElementById("boxGiliranTugas");
-let pesanElement = document.getElementById("pesanGiliran");
+              let boxElement = document.getElementById("boxGiliranTugas");
+              let pesanElement = document.getElementById("pesanGiliran");
 
-if (boxElement && pesanElement) {
-  boxElement.classList.remove("d-none");
-  boxElement.className = "alert alert-primary border-start border-4 border-primary mb-3 shadow-sm";
+              if (boxElement && pesanElement) {
+                boxElement.classList.remove("d-none");
+                boxElement.className = "alert alert-primary border-start border-4 border-primary mb-3 shadow-sm";
 
-  // Ambil tanggal giliran terdekat berikutnya
-  let statusSaya = "";
-  if (jadwalMendatang.length > 0) {
-    if (jadwalMendatang[0] === formatTanggal(hariIni)) {
-      statusSaya = `<span class="badge bg-danger fs-6">HARI INI GILIRAN ANDA!</span>`;
-    } else {
-      statusSaya = `Giliran Anda berikutnya pada tanggal: <strong class="text-primary">${jadwalMendatang[0]}</strong>`;
-    }
-  } else {
-    statusSaya = `Nama Anda tidak terdaftar dalam urutan rotasi.`;
-  }
+                let statusSaya = "";
+                if (jadwalMendatang.length > 0) {
+                  if (jadwalMendatang[0] === formatTanggal(hariIni)) {
+                    statusSaya = `<span class="badge bg-danger fs-6">HARI INI GILIRAN ANDA!</span>`;
+                  } else {
+                    statusSaya = `Giliran Anda berikutnya pada tanggal: <strong class="text-primary">${jadwalMendatang[0]}</strong>`;
+                  }
+                } else {
+                  statusSaya = `Nama Anda tidak terdaftar dalam urutan rotasi.`;
+                }
 
-  pesanElement.innerHTML = `
-    <div class="mb-2">
-      📢 <strong>Hari ini (${formatTanggal(hariIni)}) yang bertugas:</strong> 
-      <span class="badge bg-success fs-6 ms-1">${petugasHariIni}</span>
-    </div>
-    <div>
-      👤 <strong>Bapak ${namaKaryawanLogin} </strong> ${statusSaya}
-    </div>
-  `;
-}
+                pesanElement.innerHTML = `
+                  <div class="mb-2">
+                    📢 <strong>Hari ini (${formatTanggal(hariIni)}) yang bertugas:</strong> 
+                    <span class="badge bg-success fs-6 ms-1">${petugasHariIni}</span>
+                  </div>
+                  <div>
+                    👤 <strong>Status Anda (${namaKaryawanLogin}):</strong> ${statusSaya}
+                  </div>
+                `;
+              }
 
               // =========================================================================
-              // RENDERING TABEL ABSENSI
+              // 3. LOGIKA RENDERING TABEL ABSENSI (Menggunakan startDateAsli & endDateAsli)
               // =========================================================================
               let mapAbsen = {};
               arrayDetail.forEach((hari) => {
@@ -535,9 +530,9 @@ if (boxElement && pesanElement) {
               });
 
               let barisHTML = "";
-              let currDate = new Date(startDate);
+              let currDate = new Date(startDateAsli);
 
-              while (currDate <= endDate) {
+              while (currDate <= endDateAsli) {
                 let tglKey = formatTanggal(currDate);
                 let dataHariIni = mapAbsen[tglKey];
 

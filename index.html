@@ -505,17 +505,8 @@
           }
 
           // =========================================================================
-          // 2. LOGIKA RENDERING TABEL ABSENSI
+          // 2. LOGIKA RENDERING TABEL ABSENSI (Solusi Tanpa Mismatch Key)
           // =========================================================================
-          let mapAbsen = {};
-          arrayDetail.forEach((hari) => {
-            // Jika hari.tanggal ada, gunakan parseTanggal, jika tidak ambil elemen pertama
-            let tglRaw = hari.tanggal || (Array.isArray(hari) ? hari[0] : Object.values(hari)[0]);
-            let parsedDate = parseTanggal(tglRaw);
-            let normalizedKey = formatTanggal(parsedDate);
-            mapAbsen[normalizedKey] = hari;
-          });
-
           let tglAcuan = parseTanggal(arrayDetail[0].tanggal || Object.values(arrayDetail[0])[0]);
           let startDate = new Date(tglAcuan.getFullYear(), tglAcuan.getMonth(), 1, 0, 0, 0, 0);
 
@@ -528,31 +519,45 @@
 
           while (currDate <= endDate) {
             let tglKey = formatTanggal(currDate);
-            let dataHariIni = mapAbsen[tglKey];
+
+            // CARI LANGSUNG DATA DI arrayDetail YANG TANGGALNYA SAMA DENGAN currDate
+            let dataHariIni = arrayDetail.find((item) => {
+              let tglItem = item.tanggal || Object.values(item)[0];
+              if (!tglItem) return false;
+              let d1 = parseTanggal(tglItem);
+              return (
+                d1.getDate() === currDate.getDate() &&
+                d1.getMonth() === currDate.getMonth() &&
+                d1.getFullYear() === currDate.getFullYear()
+              );
+            });
 
             if (dataHariIni) {
-              // Ambil nilai berdasarkan nama property ATAU berdasarkan urutan nilai (Object.values)
-              let vals = Object.values(dataHariIni);
-              
-              // Cari jam mulai & akhir (abaikan jika nilainya sama dengan string tanggal)
-              let jamMulai = dataHariIni.dari || dataHariIni.jamMulai || dataHariIni.jam_mulai;
-              let jamAkhir = dataHariIni.sampai || dataHariIni.jamAkhir || dataHariIni.jam_akhir;
+              // Ambil nilai properti objek
+              let jamMulai = dataHariIni.dari || dataHariIni.jamMulai || dataHariIni.jam_mulai || dataHariIni.mulai;
+              let jamAkhir = dataHariIni.sampai || dataHariIni.jamAkhir || dataHariIni.jam_akhir || dataHariIni.akhir;
               let totalJam = dataHariIni.totalJam || dataHariIni.total_jam;
               let ket = dataHariIni.keterangan || dataHariIni.detail;
 
-              // Fallback jika Firebase menyimpan dalam bentuk Array/Indeks
-              if (!jamMulai || jamMulai === tglKey) jamMulai = vals[1] && vals[1] !== tglKey ? vals[1] : "-";
-              if (!jamAkhir) jamAkhir = vals[2] || "-";
-              if (!totalJam) totalJam = vals[3] || hitungTotalJam(jamMulai, jamAkhir);
-              if (!ket) ket = vals[4] || "-";
+              // Fallback jika menyimpan dengan Object.values
+              let vals = Object.values(dataHariIni);
+              if (!jamMulai || jamMulai === tglKey) {
+                jamMulai = vals.find(v => typeof v === "string" && v.includes(":") && v !== tglKey) || "-";
+              }
+              if (!jamAkhir) {
+                let jamList = vals.filter(v => typeof v === "string" && v.includes(":") && v !== tglKey);
+                jamAkhir = jamList.length > 1 ? jamList[1] : "-";
+              }
+              if (!totalJam) totalJam = hitungTotalJam(jamMulai, jamAkhir);
+              if (!ket) ket = dataHariIni.keterangan || "-";
 
               barisHTML += `
                 <tr>
                     <td class="text-nowrap fw-medium">${tglKey}</td>
-                    <td>${jamMulai}</td>
-                    <td>${jamAkhir}</td>
-                    <td>${totalJam}</td>
-                    <td class="text-nowrap text-center">${ket}</td>
+                    <td>${jamMulai || "-"}</td>
+                    <td>${jamAkhir || "-"}</td>
+                    <td>${totalJam || "-"}</td>
+                    <td class="text-nowrap text-center">${ket || "-"}</td>
                 </tr>
               `;
             } else {

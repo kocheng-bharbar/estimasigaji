@@ -528,13 +528,19 @@
             let dataHariIni = mapAbsen[tglKey];
 
             if (dataHariIni) {
+              // Menangani variasi nama field dari Firebase
+              let jamMulai = dataHariIni.dari || dataHariIni.jamMulai || dataHariIni.jam_mulai || dataHariIni.mulai || "-";
+              let jamAkhir = dataHariIni.sampai || dataHariIni.jamAkhir || dataHariIni.jam_akhir || dataHariIni.akhir || "-";
+              let totalJam = dataHariIni.totalJam || dataHariIni.total_jam || hitungTotalJam(jamMulai, jamAkhir);
+              let ket = dataHariIni.keterangan || dataHariIni.detail || "-";
+
               barisHTML += `
                 <tr>
                     <td class="text-nowrap fw-medium">${tglKey}</td>
-                    <td>${dataHariIni.dari || "-"}</td>
-                    <td>${dataHariIni.sampai || "-"}</td>
-                    <td>${dataHariIni.totalJam || "-"}</td>
-                    <td class="text-nowrap text-center">${dataHariIni.keterangan || "-"}</td>
+                    <td>${jamMulai}</td>
+                    <td>${jamAkhir}</td>
+                    <td>${totalJam}</td>
+                    <td class="text-nowrap text-center">${ket}</td>
                 </tr>
               `;
             } else {

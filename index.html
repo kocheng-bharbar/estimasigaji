@@ -360,6 +360,27 @@
   }
 
   // HELPER FUNCTIONS
+  function hitungTotalJam(jamMulai, jamAkhir) {
+    if (!jamMulai || !jamAkhir || typeof jamMulai !== "string" || typeof jamAkhir !== "string") return "-";
+    if (!jamMulai.includes(":") || !jamAkhir.includes(":")) return "-";
+    
+    let partsMulai = jamMulai.split(":").map(Number);
+    let partsAkhir = jamAkhir.split(":").map(Number);
+
+    if (partsMulai.length < 2 || partsAkhir.length < 2) return "-";
+    let [h1, m1] = partsMulai;
+    let [h2, m2] = partsAkhir;
+
+    if (isNaN(h1) || isNaN(m1) || isNaN(h2) || isNaN(m2)) return "-";
+
+    let totalMenit = (h2 * 60 + m2) - (h1 * 60 + m1);
+    if (totalMenit < 0) totalMenit += 24 * 60;
+
+    let jam = Math.floor(totalMenit / 60);
+    let menit = totalMenit % 60;
+    return `${String(jam).padStart(2, "0")}:${String(menit).padStart(2, "0")}`;
+  }
+
   const formatRupiah = (angka) => {
     return new Intl.NumberFormat("id-ID", {
       style: "currency",
@@ -457,9 +478,9 @@
             return;
           }
 
-          // Sort berdasarkan tanggal dulu
+          // Sort berdasarkan tanggal
           arrayDetail.sort(
-            (a, b) => parseTanggal(a.tanggal) - parseTanggal(b.tanggal)
+            (a, b) => parseTanggal(a.tanggal || Object.values(a)[0]) - parseTanggal(b.tanggal || Object.values(b)[0])
           );
 
           // =========================================================================
@@ -505,7 +526,7 @@
           }
 
           // =========================================================================
-          // 2. LOGIKA RENDERING TABEL ABSENSI (Solusi Tanpa Mismatch Key)
+          // 2. LOGIKA RENDERING TABEL ABSENSI
           // =========================================================================
           let tglAcuan = parseTanggal(arrayDetail[0].tanggal || Object.values(arrayDetail[0])[0]);
           let startDate = new Date(tglAcuan.getFullYear(), tglAcuan.getMonth(), 1, 0, 0, 0, 0);
@@ -520,7 +541,7 @@
           while (currDate <= endDate) {
             let tglKey = formatTanggal(currDate);
 
-            // CARI LANGSUNG DATA DI arrayDetail YANG TANGGALNYA SAMA DENGAN currDate
+            // Cari item tanggal yang cocok
             let dataHariIni = arrayDetail.find((item) => {
               let tglItem = item.tanggal || Object.values(item)[0];
               if (!tglItem) return false;
@@ -533,31 +554,35 @@
             });
 
             if (dataHariIni) {
-              // Ambil nilai properti objek
+              let vals = Object.values(dataHariIni);
               let jamMulai = dataHariIni.dari || dataHariIni.jamMulai || dataHariIni.jam_mulai || dataHariIni.mulai;
               let jamAkhir = dataHariIni.sampai || dataHariIni.jamAkhir || dataHariIni.jam_akhir || dataHariIni.akhir;
               let totalJam = dataHariIni.totalJam || dataHariIni.total_jam;
               let ket = dataHariIni.keterangan || dataHariIni.detail;
 
-              // Fallback jika menyimpan dengan Object.values
-              let vals = Object.values(dataHariIni);
-              if (!jamMulai || jamMulai === tglKey) {
-                jamMulai = vals.find(v => typeof v === "string" && v.includes(":") && v !== tglKey) || "-";
+              // Filter agar nilai jam tidak mengambil string tanggal
+              if (!jamMulai || typeof jamMulai !== "string" || !jamMulai.includes(":") || jamMulai.includes("Agustus")) {
+                jamMulai = vals.find(v => typeof v === "string" && v.includes(":") && !v.includes("Agustus")) || "-";
               }
-              if (!jamAkhir) {
-                let jamList = vals.filter(v => typeof v === "string" && v.includes(":") && v !== tglKey);
+
+              if (!jamAkhir || typeof jamAkhir !== "string" || !jamAkhir.includes(":") || jamAkhir.includes("Agustus")) {
+                let jamList = vals.filter(v => typeof v === "string" && v.includes(":") && !v.includes("Agustus"));
                 jamAkhir = jamList.length > 1 ? jamList[1] : "-";
               }
-              if (!totalJam) totalJam = hitungTotalJam(jamMulai, jamAkhir);
+
+              if (!totalJam || totalJam === "-" || totalJam.includes("NaN")) {
+                totalJam = hitungTotalJam(jamMulai, jamAkhir);
+              }
+
               if (!ket) ket = dataHariIni.keterangan || "-";
 
               barisHTML += `
                 <tr>
                     <td class="text-nowrap fw-medium">${tglKey}</td>
-                    <td>${jamMulai || "-"}</td>
-                    <td>${jamAkhir || "-"}</td>
-                    <td>${totalJam || "-"}</td>
-                    <td class="text-nowrap text-center">${ket || "-"}</td>
+                    <td>${jamMulai}</td>
+                    <td>${jamAkhir}</td>
+                    <td>${totalJam}</td>
+                    <td class="text-nowrap text-center">${ket}</td>
                 </tr>
               `;
             } else {
@@ -579,19 +604,24 @@
           // =========================================================================
           // 3. PERHITUNGAN GAJI
           // =========================================================================
-          let totalHariMasuk = arrayDetail.filter(h => h.dari && h.dari !== "-").length;
+          let totalHariMasuk = arrayDetail.filter(h => {
+            let vals = Object.values(h);
+            return vals.some(v => typeof v === "string" && v.includes(":"));
+          }).length;
+
           let countLongtripJagaMalam = 0;
           let totalJamOvertime = 0;
 
           arrayDetail.forEach((hari) => {
-            const ketLower = (hari.keterangan || "").toLowerCase();
+            let ketStr = hari.keterangan || Object.values(hari).join(" ");
+            const ketLower = ketStr.toLowerCase();
             if (
               ketLower.includes("longtrip") ||
               ketLower.includes("jaga malam")
             ) {
               countLongtripJagaMalam++;
             }
-            const otMatch = (hari.keterangan || "").match(/Overtime\s*(\d+)/i);
+            const otMatch = ketStr.match(/Overtime\s*(\d+)/i);
             if (otMatch) {
               totalJamOvertime += parseInt(otMatch[1], 10);
             }
@@ -600,18 +630,13 @@
           const nominalGajiPokok = totalHariMasuk * 174000;
           const nominalLongtrip = countLongtripJagaMalam * 174000;
           const nominalOvertime = totalJamOvertime * 15000;
-          const totalPendapatan =
-            nominalGajiPokok + nominalLongtrip + nominalOvertime;
+          const totalPendapatan = nominalGajiPokok + nominalLongtrip + nominalOvertime;
 
           const nominalPotSppbg = totalHariMasuk * 2000;
           const nominalPotBpjsKes = 41811;
           const nominalPotBpjsJht = 83623;
           const nominalPotBpjsJp = 41811;
-          const totalPotongan =
-            nominalPotSppbg +
-            nominalPotBpjsKes +
-            nominalPotBpjsJht +
-            nominalPotBpjsJp;
+          const totalPotongan = nominalPotSppbg + nominalPotBpjsKes + nominalPotBpjsJht + nominalPotBpjsJp;
 
           const gajiBersih = totalPendapatan - totalPotongan;
 

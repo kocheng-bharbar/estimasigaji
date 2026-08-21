@@ -526,9 +526,9 @@
           }
 
           // =========================================================================
-          // 2. LOGIKA RENDERING TABEL ABSENSI (Fix Otomatis Jam & Total Jam)
+          // 2. LOGIKA RENDERING TABEL ABSENSI (Fix Formatting Date Matching)
           // =========================================================================
-          let tglAcuan = parseTanggal(arrayDetail[0].dari || arrayDetail[0].tanggal);
+          let tglAcuan = parseTanggal(arrayDetail[0].tanggal);
           let startDate = new Date(tglAcuan.getFullYear(), tglAcuan.getMonth(), 1, 0, 0, 0, 0);
 
           let barisHTML = "";
@@ -537,11 +537,10 @@
           while (currDate <= hariIni) {
             let tglKey = formatTanggal(currDate);
 
-            // Cari data di JSON berdasarkan tanggal
+            // Mencocokkan data berdasarkan tanggal string
             let dataHariIni = arrayDetail.find((item) => {
-              let tglItem = item.dari || item.tanggal;
-              if (!tglItem) return false;
-              let d1 = parseTanggal(tglItem);
+              if (!item.tanggal) return false;
+              let d1 = parseTanggal(item.tanggal);
               return (
                 d1.getDate() === currDate.getDate() &&
                 d1.getMonth() === currDate.getMonth() &&
@@ -550,43 +549,14 @@
             });
 
             if (dataHariIni) {
-              let jamMulai = "-";
-              let jamAkhir = "-";
-              let totalJamStr = "-";
+              let jamMulai = dataHariIni.dari || "-";
+              let jamAkhir = dataHariIni.sampai || "-";
+              let totalJamStr = dataHariIni.totalJam || "-";
               let ket = dataHariIni.keterangan || "-";
 
-              // 1. Ekstrak Jam Absen dari field "tanggal" (contoh: "2026-08-01 3:46:30")
-              if (dataHariIni.tanggal && dataHariIni.tanggal.includes(" ")) {
-                let jamAbsenRaw = dataHariIni.tanggal.split(" ")[1]; // Ambil "3:46:30"
-                let jamAbsenNum = parseInt(jamAbsenRaw.split(":")[0], 10);
-
-                // Cek apakah ada Overtime
-                let bonusOT = 0;
-                let otMatch = ket.match(/Overtime\s*(\d+)/i);
-                if (otMatch) {
-                  bonusOT = parseInt(otMatch[1], 10);
-                }
-
-                // Determine Shift
-                if (jamAbsenNum < 10) {
-                  // SHIFT PAGI (Normal: 04:00 s/d 16:00)
-                  jamMulai = "04:00";
-                  let jamPulang = 16 + bonusOT;
-                  jamAkhir = `${String(jamPulang).padStart(2, "0")}:00`;
-                  totalJamStr = `${12 + bonusOT}:00`;
-                } else {
-                  // SHIFT SIANG/MALAM (Normal: 13:00 s/d 01:00)
-                  jamMulai = "13:00";
-                  let jamPulang = (1 + bonusOT) % 24;
-                  jamAkhir = `${String(jamPulang).padStart(2, "0")}:00`;
-                  totalJamStr = `${12 + bonusOT}:00`;
-                }
-              }
-
-              // Jika status absen belum selesai ("sampai" == "-")
-              if (dataHariIni.sampai === "-") {
-                jamAkhir = "-";
-                totalJamStr = "-";
+              // Jika totalJam di DB kosong, hitung ulang di client side
+              if (totalJamStr === "-" && jamMulai !== "-" && jamAkhir !== "-") {
+                totalJamStr = hitungTotalJam(jamMulai, jamAkhir);
               }
 
               barisHTML += `
@@ -599,7 +569,6 @@
                 </tr>
               `;
             } else {
-              // Baris Kosong (Hari Libur / Tidak Masuk)
               barisHTML += `
                 <tr class="baris-kosong">
                     <td class="text-nowrap text-muted">${tglKey}</td>

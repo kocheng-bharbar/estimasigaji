@@ -371,26 +371,36 @@ function cekGiliranTugasKaryawan(namaKaryawan, tglAwalFilter, tglAkhirFilter) {
       };
 
       const namaBulan = [
-        "Januari", "Februari", "Maret", "April", "Mei", "Juni",
-        "Juli", "Agustus", "September", "Oktober", "November", "Desember"
-      ];
+  "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+  "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+];
 
-      // 1. Perbaikan parseTanggal: Pastikan jam di-set ke 00:00:00
+const namaBulanEN = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December"
+];
+
 function parseTanggal(tglStr) {
   if (!tglStr) return new Date();
   let parts = tglStr.trim().split(" ");
   if (parts.length !== 3) return new Date();
-  let d = parseInt(parts[0], 10);
-  let m = namaBulan.indexOf(parts[1]);
-  let y = parseInt(parts[2], 10);
   
-  // Gunakan jam 0,0,0,0 agar tidak ada pergeseran timezone/jam
+  let d = parseInt(parts[0], 10);
+  let bulanStr = parts[1];
+  let y = parseInt(parts[2], 10);
+
+  // Cek ke daftar nama bulan Indonesia dulu, jika tidak ketemu cek Inggris
+  let m = namaBulan.findIndex(b => b.toLowerCase() === bulanStr.toLowerCase());
+  if (m === -1) {
+    m = namaBulanEN.findIndex(b => b.toLowerCase() === bulanStr.toLowerCase());
+  }
+  if (m === -1) m = 0; // fallback default ke Januari jika tidak cocok
+
   return new Date(y, m, d, 0, 0, 0, 0);
 }
 
-// 2. Perbaikan formatTanggal: Hilangkan padStart agar cocok dengan format Firebase ("21 Agustus 2026")
 function formatTanggal(dateObj) {
-  let d = dateObj.getDate(); // Tanpa padStart(2, "0")
+  let d = dateObj.getDate(); // Tanpa padStart agar cocok dengan "1 Agustus" maupun "21 Agustus"
   let m = namaBulan[dateObj.getMonth()];
   let y = dateObj.getFullYear();
   return `${d} ${m} ${y}`;
@@ -526,45 +536,61 @@ function formatTanggal(dateObj) {
               }
 
               // =========================================================================
-              // 3. LOGIKA RENDERING TABEL ABSENSI (Menggunakan startDateAsli & endDateAsli)
-              // =========================================================================
-              let mapAbsen = {};
-              arrayDetail.forEach((hari) => {
-                mapAbsen[hari.tanggal] = hari;
-              });
+// 3. LOGIKA RENDERING TABEL ABSENSI
+// =========================================================================
+let mapAbsen = {};
+arrayDetail.forEach((hari) => {
+  // Simpan data dengan key yang sudah dinormalisasi (lowercase & trim)
+  let keyBersih = hari.tanggal.trim();
+  mapAbsen[keyBersih] = hari;
+});
 
-              let barisHTML = "";
-              let currDate = new Date(startDateAsli);
+// Paksa batas awal dari TANGGAL 1 di bulan yang sama dengan data absensi
+let tglAcuan = parseTanggal(arrayDetail[0].tanggal);
+let startDateAsli = new Date(tglAcuan.getFullYear(), tglAcuan.getMonth(), 1);
 
-              while (currDate <= endDateAsli) {
-                let tglKey = formatTanggal(currDate);
-                let dataHariIni = mapAbsen[tglKey];
+// Batas akhir sampai tanggal data terakhir atau hari ini (mana yang lebih besar)
+let endDateAsli = parseTanggal(arrayDetail[arrayDetail.length - 1].tanggal);
+let hariIniPatuhi = new Date();
+hariIniPatuhi.setHours(0, 0, 0, 0);
 
-                if (dataHariIni) {
-                  barisHTML += `
-                                <tr>
-                                    <td class="text-nowrap fw-medium">${dataHariIni.tanggal}</td>
-                                    <td>${dataHariIni.dari || "-"}</td>
-                                    <td>${dataHariIni.sampai || "-"}</td>
-                                    <td>${dataHariIni.totalJam || "-"}</td>
-                                    <td class="text-nowrap text-center">${dataHariIni.keterangan || "-"}</td>
-                                </tr>
-                            `;
-                } else {
-                  barisHTML += `
-                                <tr class="baris-kosong">
-                                    <td class="text-nowrap text-muted">${tglKey}</td>
-                                    <td class="text-muted">-</td>
-                                    <td class="text-muted">-</td>
-                                    <td class="text-muted">-</td>
-                                    <td class="text-muted">-</td>
-                                </tr>
-                            `;
-                }
-                currDate.setDate(currDate.getDate() + 1);
-              }
+if (endDateAsli < hariIniPatuhi) {
+  endDateAsli = hariIniPatuhi;
+}
 
-              tableBody.innerHTML = barisHTML;
+let barisHTML = "";
+let currDate = new Date(startDateAsli);
+
+while (currDate <= endDateAsli) {
+  let tglKey = formatTanggal(currDate);
+  let dataHariIni = mapAbsen[tglKey];
+
+  if (dataHariIni) {
+    barisHTML += `
+      <tr>
+          <td class="text-nowrap fw-medium">${dataHariIni.tanggal}</td>
+          <td>${dataHariIni.dari || "-"}</td>
+          <td>${dataHariIni.sampai || "-"}</td>
+          <td>${dataHariIni.totalJam || "-"}</td>
+          <td class="text-nowrap text-center">${dataHariIni.keterangan || "-"}</td>
+      </tr>
+    `;
+  } else {
+    // Menampilkan tanggal yang kosong/belum diisi absensinya
+    barisHTML += `
+      <tr class="baris-kosong">
+          <td class="text-nowrap text-muted">${tglKey}</td>
+          <td class="text-muted">-</td>
+          <td class="text-muted">-</td>
+          <td class="text-muted">-</td>
+          <td class="text-muted">-</td>
+      </tr>
+    `;
+  }
+  currDate.setDate(currDate.getDate() + 1);
+}
+
+tableBody.innerHTML = barisHTML;
 
               // =========================================================================
               // PERHITUNGAN GAJI

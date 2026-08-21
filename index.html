@@ -386,11 +386,11 @@ function cekGiliranTugasKaryawan(namaKaryawan, tglAwalFilter, tglAkhirFilter) {
       }
 
       function formatTanggal(dateObj) {
-        let d = dateObj.getDate().toString().padStart(2, "0");
-        let m = namaBulan[dateObj.getMonth()];
-        let y = dateObj.getFullYear();
-        return `${d} ${m} ${y}`;
-      }
+  let d = dateObj.getDate(); // <-- Cukup ambil angka tanggal langsung (1, 2, ..., 21)
+  let m = namaBulan[dateObj.getMonth()];
+  let y = dateObj.getFullYear();
+  return `${d} ${m} ${y}`;
+}
 
       function hitungTotalJam(jamMulai, jamAkhir) {
         if (!jamMulai || !jamAkhir || jamMulai === "-" || jamAkhir === "-") return "-";

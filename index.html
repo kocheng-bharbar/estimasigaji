@@ -375,18 +375,22 @@ function cekGiliranTugasKaryawan(namaKaryawan, tglAwalFilter, tglAkhirFilter) {
         "Juli", "Agustus", "September", "Oktober", "November", "Desember"
       ];
 
-      function parseTanggal(tglStr) {
-        if (!tglStr) return new Date();
-        let parts = tglStr.trim().split(" ");
-        if (parts.length !== 3) return new Date();
-        let d = parseInt(parts[0], 10);
-        let m = namaBulan.indexOf(parts[1]);
-        let y = parseInt(parts[2], 10);
-        return new Date(y, m, d);
-      }
+      // 1. Perbaikan parseTanggal: Pastikan jam di-set ke 00:00:00
+function parseTanggal(tglStr) {
+  if (!tglStr) return new Date();
+  let parts = tglStr.trim().split(" ");
+  if (parts.length !== 3) return new Date();
+  let d = parseInt(parts[0], 10);
+  let m = namaBulan.indexOf(parts[1]);
+  let y = parseInt(parts[2], 10);
+  
+  // Gunakan jam 0,0,0,0 agar tidak ada pergeseran timezone/jam
+  return new Date(y, m, d, 0, 0, 0, 0);
+}
 
-      function formatTanggal(dateObj) {
-  let d = dateObj.getDate(); // <-- Cukup ambil angka tanggal langsung (1, 2, ..., 21)
+// 2. Perbaikan formatTanggal: Hilangkan padStart agar cocok dengan format Firebase ("21 Agustus 2026")
+function formatTanggal(dateObj) {
+  let d = dateObj.getDate(); // Tanpa padStart(2, "0")
   let m = namaBulan[dateObj.getMonth()];
   let y = dateObj.getFullYear();
   return `${d} ${m} ${y}`;

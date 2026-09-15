@@ -802,9 +802,10 @@
 
                         document.getElementById("valGajiBersih").textContent = formatRupiah(gajiBersih);
 
-                        // Tampilkan Dashboard
-                        searchCard.classList.add("hidden");
-                        hasilBox.classList.remove("hidden");
+                        // Tampilkan Dashboard dengan display block yang tegas
+searchCard.classList.add("hidden");
+hasilBox.classList.remove("hidden");
+hasilBox.classList.add("block");
                     } else {
                         errorBox.textContent = "NIK yang Anda masukkan salah.";
                         errorBox.classList.remove("hidden");

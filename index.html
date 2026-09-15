@@ -96,59 +96,59 @@
         </div>
 
         <!-- AREA HASIL DASHBOARD -->
-<div id="hasilData" class="hidden space-y-4 sm:space-y-6">
-    
-    <!-- KARTU PROFIL UTAMA (Mengikuti Gambar 02) -->
-    <div class="bg-white p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-slate-200/80 shadow-sm space-y-4">
-        
-        <!-- Baris 1: Avatar, Nama, Badge & NIK -->
-        <div class="flex items-center gap-3.5">
-            <div id="userAvatar" class="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-emerald-700 text-white font-extrabold text-lg sm:text-xl flex items-center justify-center shrink-0">
-                AI
-            </div>
-            <div class="min-w-0 flex-1">
-                <div class="flex items-center gap-2 flex-wrap">
-                    <h1 id="namaKaryawanJudul" class="text-base sm:text-xl font-extrabold text-slate-900 truncate">Armi Iqbal Priambudi</h1>
-                    <span class="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-md">Karyawan</span>
+        <div id="hasilData" class="hidden space-y-4 sm:space-y-6">
+            
+            <!-- KARTU PROFIL UTAMA (Sesuai Gambar 02) -->
+            <div class="bg-white p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-slate-200/80 shadow-sm space-y-4">
+                
+                <!-- Baris 1: Avatar, Nama, Badge & NIK -->
+                <div class="flex items-center gap-3.5">
+                    <div id="userAvatar" class="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-emerald-700 text-white font-extrabold text-lg sm:text-xl flex items-center justify-center shrink-0">
+                        --
+                    </div>
+                    <div class="min-w-0 flex-1">
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <h1 id="namaKaryawanJudul" class="text-base sm:text-xl font-extrabold text-slate-900 truncate">Nama Karyawan</h1>
+                            <span class="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-md">Karyawan</span>
+                        </div>
+                        <p id="subNikPeriode" class="text-xs text-slate-500 font-medium mt-0.5">NIK: - • Periode Berjalan</p>
+                    </div>
                 </div>
-                <p id="subNikPeriode" class="text-xs text-slate-500 font-medium mt-0.5">NIK: 359864 • Periode September 2026</p>
-            </div>
-        </div>
 
-        <!-- Baris 2: Info Tugas Piket -->
-        <div class="pt-3 border-t border-slate-100 space-y-1.5 text-xs font-semibold">
-            <div class="flex items-center gap-2 text-slate-800">
-                <i class="fa-solid fa-user-shield text-purple-600 text-xs"></i>
-                <span>Hari ini bertugas piket: <strong id="txtPetugasHariIni" class="font-extrabold">Sahrul</strong></span>
-            </div>
-            <div class="flex items-center gap-2 text-slate-700">
-                <i class="fa-regular fa-clock text-amber-500 text-xs"></i>
-                <span id="txtStatusGiliranSaya">Tugas piket anda <strong class="font-extrabold text-slate-900">27 September 2026</strong></span>
-            </div>
-        </div>
+                <!-- Baris 2: Info Tugas Piket -->
+                <div class="pt-3 border-t border-slate-100 space-y-1.5 text-xs font-semibold">
+                    <div class="flex items-center gap-2 text-slate-800">
+                        <i class="fa-solid fa-user-shield text-purple-600 text-xs"></i>
+                        <span>Hari ini bertugas piket: <strong id="txtPetugasHariIni" class="font-extrabold text-slate-900">-</strong></span>
+                    </div>
+                    <div class="flex items-center gap-2 text-slate-700">
+                        <i class="fa-regular fa-clock text-amber-500 text-xs"></i>
+                        <span id="txtStatusGiliranSaya">Status giliran tugas anda: -</span>
+                    </div>
+                </div>
 
-        <!-- Baris 3: Tanggal Hari Ini & Tombol Keluar -->
-        <div class="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
-            <div class="flex items-center gap-2 px-3 py-1.5 bg-slate-100/80 border border-slate-200/60 rounded-xl text-xs font-bold text-slate-800">
-                <i class="fa-regular fa-calendar-days text-emerald-600"></i>
-                <span id="txtTanggalHariIni">Selasa, 15 September 2026</span>
-            </div>
-            <button id="btnReset" class="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all">
-                <i class="fa-solid fa-right-from-bracket"></i>
-                <span>Keluar</span>
-            </button>
-        </div>
+                <!-- Baris 3: Tanggal Hari Ini & Tombol Keluar -->
+                <div class="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+                    <div class="flex items-center gap-2 px-3 py-1.5 bg-slate-100/80 border border-slate-200/60 rounded-xl text-xs font-bold text-slate-800">
+                        <i class="fa-regular fa-calendar-days text-emerald-600"></i>
+                        <span id="txtTanggalHariIni">Hari Ini</span>
+                    </div>
+                    <button id="btnReset" class="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all">
+                        <i class="fa-solid fa-right-from-bracket"></i>
+                        <span>Keluar</span>
+                    </button>
+                </div>
 
-    </div>
+            </div>
 
             <!-- TOP STATS CARDS (4 COLS RESPONSIVE) -->
-            <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5 mb-6">
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
 
                 <!-- CARD 1: JUMLAH KEHADIRAN -->
                 <div class="bg-white rounded-2xl sm:rounded-[24px] p-4 sm:p-5 border border-slate-200/80 shadow-sm flex flex-col justify-between">
                     <div class="flex items-center justify-between mb-2">
                         <span class="text-xs font-bold text-slate-400">Kehadiran</span>
-                        <div class="w-8 h-8 rounded-xl bg-emerald-50 text-brand-700 flex items-center justify-center text-sm font-bold">
+                        <div class="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center text-sm font-bold">
                             <i class="fa-solid fa-user-check"></i>
                         </div>
                     </div>
@@ -163,7 +163,7 @@
                 </div>
 
                 <!-- CARD 2: TOTAL PENDAPATAN BERSIH -->
-                <div class="bg-gradient-to-br from-brand-700 via-brand-700 to-brand-800 rounded-2xl sm:rounded-[24px] p-4 sm:p-5 text-white shadow-md shadow-brand-700/20 flex flex-col justify-between">
+                <div class="bg-gradient-to-br from-emerald-700 via-emerald-700 to-emerald-800 rounded-2xl sm:rounded-[24px] p-4 sm:p-5 text-white shadow-md shadow-emerald-700/20 flex flex-col justify-between">
                     <div class="flex items-center justify-between mb-2">
                         <span class="text-xs font-bold text-emerald-100/90 uppercase tracking-wider">Take Home Pay</span>
                         <i class="fa-solid fa-wallet text-emerald-200/70 text-base"></i>
@@ -230,20 +230,17 @@
                             <span id="txtBulanTahunBadge" class="text-xs font-bold bg-slate-100 text-slate-600 px-3 py-1 rounded-full">Periode</span>
                         </div>
 
-                        <!-- Progress Breakdown Bars -->
                         <div class="space-y-3.5">
-                            <!-- Kehadiran Normal -->
                             <div>
                                 <div class="flex justify-between text-xs font-bold mb-1">
-                                    <span class="text-slate-700"><i class="fa-solid fa-circle text-brand-700 text-[8px] mr-1.5"></i> Kehadiran Kerja Normal</span>
+                                    <span class="text-slate-700"><i class="fa-solid fa-circle text-emerald-700 text-[8px] mr-1.5"></i> Kehadiran Kerja Normal</span>
                                     <span id="distHadirText" class="text-slate-900">0 Hari</span>
                                 </div>
                                 <div class="w-full bg-slate-100 rounded-full h-2.5">
-                                    <div id="distHadirBar" class="bg-brand-700 h-2.5 rounded-full" style="width: 100%"></div>
+                                    <div id="distHadirBar" class="bg-emerald-700 h-2.5 rounded-full" style="width: 100%"></div>
                                 </div>
                             </div>
 
-                            <!-- Longtrip & Jaga Malam -->
                             <div>
                                 <div class="flex justify-between text-xs font-bold mb-1">
                                     <span class="text-slate-700"><i class="fa-solid fa-circle text-purple-600 text-[8px] mr-1.5"></i> Longtrip & Jaga Malam</span>
@@ -254,7 +251,6 @@
                                 </div>
                             </div>
 
-                            <!-- Overtime -->
                             <div>
                                 <div class="flex justify-between text-xs font-bold mb-1">
                                     <span class="text-slate-700"><i class="fa-solid fa-circle text-blue-600 text-[8px] mr-1.5"></i> Jam Overtime / Lembur</span>
@@ -274,7 +270,7 @@
                                 <h2 class="text-base font-bold text-slate-900">Log Rincian Absensi & Aktivitas</h2>
                                 <p class="text-xs text-slate-400">Daftar kehadiran lengkap tanggal demi tanggal</p>
                             </div>
-                            <span class="text-xs font-bold bg-brand-50 text-brand-700 px-3 py-1 rounded-xl border border-brand-200">
+                            <span class="text-xs font-bold bg-emerald-50 text-emerald-700 px-3 py-1 rounded-xl border border-emerald-200">
                                 Total: <span id="logCountText">0 Record</span>
                             </span>
                         </div>
@@ -291,7 +287,6 @@
                                     </tr>
                                 </thead>
                                 <tbody id="tabelBodyDetail" class="divide-y divide-slate-100 text-xs sm:text-sm font-medium text-slate-700">
-                                    <!-- Dynamic Rows Generated via JavaScript -->
                                 </tbody>
                             </table>
                         </div>
@@ -306,7 +301,7 @@
                     <div class="bg-white rounded-2xl sm:rounded-[28px] p-4 sm:p-6 shadow-sm border border-slate-200/80 flex flex-col justify-between">
                         <div>
                             <div class="flex items-center gap-2.5 mb-4 pb-3 border-b border-slate-100">
-                                <div class="w-9 h-9 rounded-xl bg-emerald-50 text-brand-700 flex items-center justify-center text-base font-bold">
+                                <div class="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center text-base font-bold">
                                     <i class="fa-solid fa-coins"></i>
                                 </div>
                                 <div>
@@ -316,7 +311,6 @@
                             </div>
 
                             <div class="space-y-4 text-xs">
-                                <!-- Gaji Pokok -->
                                 <div class="flex justify-between items-start pb-2 border-b border-slate-100">
                                     <div>
                                         <p class="font-bold text-slate-900 text-sm">Gaji Pokok</p>
@@ -325,7 +319,6 @@
                                     <span id="valGajiPokok" class="font-black text-slate-900 text-sm">Rp 0</span>
                                 </div>
 
-                                <!-- Longtrip & Jaga Malam -->
                                 <div class="flex justify-between items-start pb-2 border-b border-slate-100">
                                     <div>
                                         <p class="font-bold text-slate-900 text-sm">Longtrip & Jaga Malam</p>
@@ -334,7 +327,6 @@
                                     <span id="valLongtrip" class="font-black text-slate-900 text-sm">Rp 0</span>
                                 </div>
 
-                                <!-- Overtime -->
                                 <div class="flex justify-between items-start pb-2 border-b border-slate-100">
                                     <div>
                                         <p class="font-bold text-slate-900 text-sm">Overtime</p>
@@ -344,7 +336,6 @@
                                 </div>
                             </div>
 
-                            <!-- Subtotal Pendapatan -->
                             <div class="mt-4 p-3.5 bg-blue-50/70 rounded-2xl flex items-center justify-between border border-blue-100">
                                 <span class="text-xs font-bold text-slate-800">Total Pendapatan:</span>
                                 <span id="valTotalPendapatan" class="text-base font-black text-blue-600">Rp 0</span>
@@ -366,7 +357,6 @@
                             </div>
 
                             <div class="space-y-4 text-xs">
-                                <!-- Iuran SPPBG -->
                                 <div class="flex justify-between items-start pb-2 border-b border-slate-100">
                                     <div>
                                         <p class="font-bold text-slate-900 text-sm">Iuran SPPBG</p>
@@ -375,7 +365,6 @@
                                     <span id="valPotSppbg" class="font-extrabold text-red-500 text-sm">-Rp 0</span>
                                 </div>
 
-                                <!-- Iuran BPJS Kesehatan -->
                                 <div class="flex justify-between items-start pb-2 border-b border-slate-100">
                                     <div>
                                         <p class="font-bold text-slate-900 text-sm">Iuran BPJS Kesehatan</p>
@@ -384,7 +373,6 @@
                                     <span id="valPotKes" class="font-extrabold text-red-500 text-sm">-Rp 41.811</span>
                                 </div>
 
-                                <!-- Iuran BPJS JHT TK -->
                                 <div class="flex justify-between items-start pb-2 border-b border-slate-100">
                                     <div>
                                         <p class="font-bold text-slate-900 text-sm">Iuran BPJS JHT TK</p>
@@ -393,7 +381,6 @@
                                     <span id="valPotJht" class="font-extrabold text-red-500 text-sm">-Rp 83.623</span>
                                 </div>
 
-                                <!-- Iuran BPJS JP TK -->
                                 <div class="flex justify-between items-start pb-2 border-b border-slate-100">
                                     <div>
                                         <p class="font-bold text-slate-900 text-sm">Iuran BPJS JP TK</p>
@@ -403,16 +390,14 @@
                                 </div>
                             </div>
 
-                            <!-- Subtotal Potongan -->
                             <div class="mt-4 p-3.5 bg-red-50/70 rounded-2xl flex items-center justify-between border border-red-100">
                                 <span class="text-xs font-bold text-slate-800">Total Potongan:</span>
                                 <span id="valTotalPotongan" class="text-base font-black text-red-600">-Rp 0</span>
                             </div>
                         </div>
 
-                        <!-- RINGKASAN TAKE HOME PAY & ACTION BUTTON -->
                         <div class="mt-6 pt-4 border-t border-slate-100">
-                            <div class="bg-brand-900 text-white p-4 rounded-2xl mb-3 flex items-center justify-between shadow-md">
+                            <div class="bg-emerald-900 text-white p-4 rounded-2xl mb-3 flex items-center justify-between shadow-md">
                                 <div>
                                     <p class="text-[10px] text-emerald-200 uppercase font-bold tracking-wider">Penerimaan Bersih</p>
                                     <h4 id="valGajiBersih" class="text-xl font-black text-white mt-0.5">Rp 0</h4>
@@ -420,7 +405,7 @@
                                 <i class="fa-solid fa-circle-check text-emerald-400 text-2xl"></i>
                             </div>
 
-                            <button onclick="downloadSlipGaji()" class="w-full py-3 bg-brand-700 hover:bg-brand-800 active:scale-98 text-white font-bold text-xs rounded-xl shadow-md shadow-brand-700/20 flex items-center justify-center gap-2 transition-all">
+                            <button onclick="downloadSlipGaji()" class="w-full py-3 bg-emerald-700 hover:bg-emerald-800 active:scale-98 text-white font-bold text-xs rounded-xl shadow-md shadow-emerald-700/20 flex items-center justify-center gap-2 transition-all">
                                 <i class="fa-solid fa-file-arrow-down"></i>
                                 <span>Unduh Slip Gaji (PDF)</span>
                             </button>
@@ -432,8 +417,6 @@
             </div>
 
         </div>
-
-    </div>
 
     <!-- MODAL NOTIFIKASI TOAST -->
     <div id="toastMessage" class="fixed bottom-5 right-5 left-5 sm:left-auto sm:max-w-md bg-slate-900 text-white px-4 py-3 rounded-2xl shadow-2xl z-50 hidden flex items-center gap-3 border border-slate-700 text-xs font-medium">

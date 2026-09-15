@@ -98,42 +98,42 @@
         <!-- AREA HASIL DASHBOARD -->
         <div id="hasilData" class="hidden space-y-4 sm:space-y-6">
             
-            <!-- KARTU PROFIL UTAMA (Sesuai Gambar 02) -->
-            <div class="bg-white p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-slate-200/80 shadow-sm space-y-4">
+            <!-- KARTU PROFIL UTAMA (FIXED RESPONSIVE MOBILE) -->
+            <div class="w-full bg-white p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-slate-200/80 shadow-sm space-y-3.5 overflow-hidden">
                 
                 <!-- Baris 1: Avatar, Nama, Badge & NIK -->
-                <div class="flex items-center gap-3.5">
-                    <div id="userAvatar" class="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-emerald-700 text-white font-extrabold text-lg sm:text-xl flex items-center justify-center shrink-0">
+                <div class="flex items-center gap-3 w-full">
+                    <div id="userAvatar" class="w-11 h-11 sm:w-14 sm:h-14 rounded-2xl bg-emerald-700 text-white font-extrabold text-base sm:text-xl flex items-center justify-center shrink-0">
                         --
                     </div>
                     <div class="min-w-0 flex-1">
-                        <div class="flex items-center gap-2 flex-wrap">
-                            <h1 id="namaKaryawanJudul" class="text-base sm:text-xl font-extrabold text-slate-900 truncate">Nama Karyawan</h1>
-                            <span class="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-md">TEST KARYAWAN</span>
+                        <div class="flex items-center gap-1.5 flex-wrap">
+                            <h1 id="namaKaryawanJudul" class="text-sm sm:text-xl font-extrabold text-slate-900 truncate">Nama Karyawan</h1>
+                            <span class="text-[9px] sm:text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-md shrink-0">Karyawan</span>
                         </div>
-                        <p id="subNikPeriode" class="text-xs text-slate-500 font-medium mt-0.5">NIK: - • Periode Berjalan</p>
+                        <p id="subNikPeriode" class="text-[11px] sm:text-xs text-slate-500 font-medium mt-0.5 truncate">NIK: - • Periode Berjalan</p>
                     </div>
                 </div>
 
                 <!-- Baris 2: Info Tugas Piket -->
-                <div class="pt-3 border-t border-slate-100 space-y-1.5 text-xs font-semibold">
-                    <div class="flex items-center gap-2 text-slate-800">
-                        <i class="fa-solid fa-user-shield text-purple-600 text-xs"></i>
-                        <span>Hari ini bertugas piket: <strong id="txtPetugasHariIni" class="font-extrabold text-slate-900">-</strong></span>
+                <div class="pt-3 border-t border-slate-100 space-y-1 text-xs font-semibold w-full">
+                    <div class="flex items-center gap-2 text-slate-800 w-full">
+                        <i class="fa-solid fa-user-shield text-purple-600 text-xs w-4 text-center shrink-0"></i>
+                        <span class="truncate">Hari ini bertugas piket: <strong id="txtPetugasHariIni" class="font-extrabold text-slate-900">-</strong></span>
                     </div>
-                    <div class="flex items-center gap-2 text-slate-700">
-                        <i class="fa-regular fa-clock text-amber-500 text-xs"></i>
-                        <span id="txtStatusGiliranSaya">Status giliran tugas anda: -</span>
+                    <div class="flex items-center gap-2 text-slate-700 w-full">
+                        <i class="fa-regular fa-clock text-amber-500 text-xs w-4 text-center shrink-0"></i>
+                        <span id="txtStatusGiliranSaya" class="truncate">Status giliran tugas anda: -</span>
                     </div>
                 </div>
 
                 <!-- Baris 3: Tanggal Hari Ini & Tombol Keluar -->
-                <div class="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
-                    <div class="flex items-center gap-2 px-3 py-1.5 bg-slate-100/80 border border-slate-200/60 rounded-xl text-xs font-bold text-slate-800">
+                <div class="pt-3 border-t border-slate-100 flex items-center justify-between gap-2 w-full">
+                    <div class="flex items-center gap-2 px-2.5 py-1.5 bg-slate-100/80 border border-slate-200/60 rounded-xl text-[11px] sm:text-xs font-bold text-slate-800 shrink-0">
                         <i class="fa-regular fa-calendar-days text-emerald-600"></i>
                         <span id="txtTanggalHariIni">Hari Ini</span>
                     </div>
-                    <button id="btnReset" class="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all">
+                    <button id="btnReset" class="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all shrink-0">
                         <i class="fa-solid fa-right-from-bracket"></i>
                         <span>Keluar</span>
                     </button>

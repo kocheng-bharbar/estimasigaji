@@ -60,10 +60,10 @@
         }
     </style>
 </head>
-<body class="p-2 sm:p-4 lg:p-6 min-h-screen flex justify-center items-start">
+<body class="p-0 sm:p-4 lg:p-6 min-h-screen flex justify-center items-start">
 
     <!-- MAIN CONTAINER -->
-    <div class="w-full max-w-[1440px] bg-[#f1f5f9] rounded-2xl sm:rounded-[32px] p-3 sm:p-5 lg:p-7 card-shadow border border-white/80">
+    <div class="w-full max-w-[1440px] bg-[#f1f5f9] rounded-none sm:rounded-[32px] p-3 sm:p-5 lg:p-7 card-shadow border-0 sm:border border-white/80 min-h-screen sm:min-h-0">
         
         <!-- CARD PENCARIAN / LOGIN -->
         <div id="searchCard" class="bg-white p-5 sm:p-7 rounded-2xl sm:rounded-3xl border border-slate-200/80 shadow-sm mb-6 max-w-2xl mx-auto">
@@ -426,23 +426,28 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-        import {
-            getFirestore,
-            doc,
-            getDoc,
-            collection,
-            getDocs,
-        } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+import {
+    initializeFirestore,
+    doc,
+    getDoc,
+    collection,
+    getDocs,
+} from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyCnmSSs8wqdw2OgoTZrV2UJImDmvXiaxUs",
-            authDomain: "absensi-bb.firebaseapp.com",
-            projectId: "absensi-bb",
-            storageBucket: "absensi-bb.firebasestorage.app",
-            messagingSenderId: "532452127372",
-            appId: "1:532452127372:web:47c40b7362e2c96aa981a9",
-            measurementId: "G-L2V6L2098D",
-        };
+const firebaseConfig = {
+    apiKey: "AIzaSyCnmSSs8wqdw2OgoTZrV2UJImDmvXiaxUs",
+    authDomain: "absensi-bb.firebaseapp.com",
+    projectId: "absensi-bb",
+    storageBucket: "absensi-bb.firebasestorage.app",
+    messagingSenderId: "532452127372",
+    appId: "1:532452127372:web:47c40b7362e2c96aa981a9"
+};
+
+const app = initializeApp(firebaseConfig);
+// Menggunakan initializeFirestore dengan Long Polling untuk menghilangkan Error 400
+const db = initializeFirestore(app, {
+    experimentalForceLongPolling: true,
+});
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
@@ -775,10 +780,19 @@
                         document.getElementById("statTotalLongtrip").textContent = `${countLongtripJagaMalam} Sesi`;
                         document.getElementById("statNominalLongtrip").textContent = `+${formatRupiah(nominalLongtrip)}`;
 
-                        // Update Distribution Card
-                        document.getElementById("distHadirText").textContent = `${totalHariMasuk} Hari (${totalRecordCount} Log)`;
-                        document.getElementById("distLongtripText").textContent = `${countLongtripJagaMalam} Sesi (${countLongtripJagaMalam} x Rp 174.000)`;
-                        document.getElementById("distOvertimeText").textContent = `${totalJamOvertime} Jam (${totalJamOvertime} x Rp 15.000)`;
+                        // Update Distribution Card Text
+document.getElementById("distHadirText").textContent = `${totalHariMasuk} Hari (${totalRecordCount} Log)`;
+document.getElementById("distLongtripText").textContent = `${countLongtripJagaMalam} Sesi (${countLongtripJagaMalam} x Rp 174.000)`;
+document.getElementById("distOvertimeText").textContent = `${totalJamOvertime} Jam (${totalJamOvertime} x Rp 15.000)`;
+
+// Tambahkan kode ini agar Progress Bar bergerak dinamis:
+const pctHadir = totalRecordCount > 0 ? Math.min(100, Math.round((totalHariMasuk / totalRecordCount) * 100)) : 0;
+const pctLongtrip = totalHariMasuk > 0 ? Math.min(100, Math.round((countLongtripJagaMalam / totalHariMasuk) * 100)) : 0;
+const pctOvertime = totalHariMasuk > 0 ? Math.min(100, Math.round((totalJamOvertime / (totalHariMasuk * 2)) * 100)) : 0;
+
+document.getElementById("distHadirBar").style.width = `${pctHadir}%`;
+document.getElementById("distLongtripBar").style.width = `${pctLongtrip}%`;
+document.getElementById("distOvertimeBar").style.width = `${pctOvertime}%`;
 
                         // Update Financial Card Breakdown
                         document.getElementById("calcGajiPokokSub").textContent = `${totalHariMasuk} Hari x Rp 174.000`;

@@ -109,7 +109,7 @@
                     <div class="min-w-0 flex-1">
                         <div class="flex items-center gap-1.5 flex-wrap">
                             <h1 id="namaKaryawanJudul" class="text-sm sm:text-xl font-extrabold text-slate-900 truncate">Nama Karyawan</h1>
-                            <span class="text-[9px] sm:text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-md shrink-0">Karyawan?</span>
+                            <span id="userStatusBadge" class="text-[9px] sm:text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-md shrink-0">Karyawan</span>
                         </div>
                         <p id="subNikPeriode" class="text-[11px] sm:text-xs text-slate-500 font-medium mt-0.5 truncate">NIK: - • Periode Berjalan</p>
                     </div>
@@ -615,6 +615,9 @@ const db = initializeFirestore(app, {
                         // Set Profil Header
                         document.getElementById("namaKaryawanJudul").textContent = namaKaryawanLogin;
                         document.getElementById("userAvatar").textContent = getInisial(namaKaryawanLogin);
+
+                        // Tambahkan baris ini untuk mengambil nilai status dari Firebase (misal: "Admin" / "Karyawan")
+                        document.getElementById("userStatusBadge").textContent = dbData.status || "Karyawan";
                         
                         let arrayDetail = JSON.parse(dbData.detail || "[]");
 

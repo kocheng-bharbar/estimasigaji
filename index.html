@@ -98,7 +98,7 @@
         <!-- AREA HASIL DASHBOARD -->
         <div id="hasilData" class="hidden space-y-4 sm:space-y-6">
             
-            <!-- KARTU PROFIL UTAMA (FIXED RESPONSIVE MOBILE) -->
+            <!-- KARTU PROFIL UTAMA -->
             <div class="w-full bg-white p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-slate-200/80 shadow-sm flex flex-col gap-3.5 overflow-hidden">
                 
                 <!-- Baris 1: Avatar, Nama, Badge & NIK -->
@@ -141,7 +141,7 @@
 
             </div>
 
-            <!-- TOP STATS CARDS (4 COLS RESPONSIVE) -->
+            <!-- TOP STATS CARDS -->
             <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
 
                 <!-- CARD 1: JUMLAH KEHADIRAN -->
@@ -217,7 +217,7 @@
             <!-- MAIN CONTENT AREA -->
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6">
 
-                <!-- LEFT COLUMN: DISTRIBUSI ABSENSI & LOG RINCIAN ABSENSI (8 COLS) -->
+                <!-- LEFT COLUMN -->
                 <div class="lg:col-span-8 space-y-5 sm:space-y-6">
 
                     <!-- DISTRIBUSI ABSENSI CARD -->
@@ -294,7 +294,7 @@
 
                 </div>
 
-                <!-- RIGHT COLUMN: FINANCIAL BREAKDOWN & DEDUCTIONS (4 COLS) -->
+                <!-- RIGHT COLUMN -->
                 <div class="lg:col-span-4 space-y-5 sm:space-y-6">
 
                     <!-- GAJI & PENDAPATAN CARD -->
@@ -404,11 +404,6 @@
                                 </div>
                                 <i class="fa-solid fa-circle-check text-emerald-400 text-2xl"></i>
                             </div>
-
-                            <!-- <button onclick="downloadSlipGaji()" class="w-full py-3 bg-emerald-700 hover:bg-emerald-800 active:scale-98 text-white font-bold text-xs rounded-xl shadow-md shadow-emerald-700/20 flex items-center justify-center gap-2 transition-all">
-                                <i class="fa-solid fa-file-arrow-down"></i>
-                                <span>Unduh Slip Gaji (PDF)</span>
-                            </button> -->
                         </div>
                     </div>
 
@@ -426,31 +421,30 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-import {
-    initializeFirestore,
-    doc,
-    getDoc,
-    collection,
-    getDocs,
-} from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+        import {
+            initializeFirestore,
+            doc,
+            getDoc,
+            collection,
+            getDocs,
+        } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
-const firebaseConfig = {
-    apiKey: "AIzaSyCnmSSs8wqdw2OgoTZrV2UJImDmvXiaxUs",
-    authDomain: "absensi-bb.firebaseapp.com",
-    projectId: "absensi-bb",
-    storageBucket: "absensi-bb.firebasestorage.app",
-    messagingSenderId: "532452127372",
-    appId: "1:532452127372:web:47c40b7362e2c96aa981a9"
-};
+        const firebaseConfig = {
+            apiKey: "AIzaSyCnmSSs8wqdw2OgoTZrV2UJImDmvXiaxUs",
+            authDomain: "absensi-bb.firebaseapp.com",
+            projectId: "absensi-bb",
+            storageBucket: "absensi-bb.firebasestorage.app",
+            messagingSenderId: "532452127372",
+            appId: "1:532452127372:web:47c40b7362e2c96aa981a9"
+        };
 
-const app = initializeApp(firebaseConfig);
-// Menggunakan initializeFirestore dengan Long Polling untuk menghilangkan Error 400
-const db = initializeFirestore(app, {
-    experimentalForceLongPolling: true,
-});
+        const app = initializeApp(firebaseConfig);
+        const db = initializeFirestore(app, {
+            experimentalForceLongPolling: true,
+        });
 
         // 1. Tanggal Acuan Rotasi
-        const TANGGAL_ACUAN_AWAL = new Date(2026, 7, 19); // Agustus 2026
+        const TANGGAL_ACUAN_AWAL = new Date(2026, 7, 19); // 19 Agustus 2026
 
         // 2. Daftar Urutan Karyawan
         const daftarUrutanKaryawan = [
@@ -465,9 +459,22 @@ const db = initializeFirestore(app, {
             "Aris", "Muhammad Hasbi", "Meyrubin Alfiyanto", "Nana Rukmana"
         ];
 
-        // 3. Helper Functions
+        const namaBulan = [
+            "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+            "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+        ];
+
+        const namaHari = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
+
+        // 3. Helper Functions Terperbaiki
+        function getIndexKaryawan(nama) {
+            if (!nama) return -1;
+            const cleanNama = nama.trim().toLowerCase();
+            return daftarUrutanKaryawan.findIndex(k => k.trim().toLowerCase() === cleanNama);
+        }
+
         function cekGiliranTugasKaryawan(namaKaryawan, tglAwalFilter, tglAkhirFilter) {
-            let idxKaryawan = daftarUrutanKaryawan.indexOf(namaKaryawan);
+            let idxKaryawan = getIndexKaryawan(namaKaryawan);
             if (idxKaryawan === -1) return [];
 
             let totalOrang = daftarUrutanKaryawan.length;
@@ -477,11 +484,10 @@ const db = initializeFirestore(app, {
             while (curr <= tglAkhirFilter) {
                 let selisihMilikHari = Math.round((curr - TANGGAL_ACUAN_AWAL) / (1000 * 60 * 60 * 24));
                 
-                if (selisihMilikHari >= 0) {
-                    let idxPetugasHariIni = selisihMilikHari % totalOrang;
-                    if (idxPetugasHariIni === idxKaryawan) {
-                        tanggalMendatang.push(formatTanggal(curr));
-                    }
+                // Modulo matematika yang mendukung selisih hari negatif
+                let idxPetugasHariIni = ((selisihMilikHari % totalOrang) + totalOrang) % totalOrang;
+                if (idxPetugasHariIni === idxKaryawan) {
+                    tanggalMendatang.push(formatTanggal(curr));
                 }
                 curr.setDate(curr.getDate() + 1);
             }
@@ -493,9 +499,9 @@ const db = initializeFirestore(app, {
             tglPilihan.setHours(0, 0, 0, 0);
             let selisihHari = Math.round((tglPilihan - TANGGAL_ACUAN_AWAL) / (1000 * 60 * 60 * 24));
             
-            if (selisihHari < 0) return "-";
-            let idxPetugas = selisihHari % daftarUrutanKaryawan.length;
-            return daftarUrutanKaryawan[idxPetugas];
+            let totalOrang = daftarUrutanKaryawan.length;
+            let idxPetugas = ((selisihHari % totalOrang) + totalOrang) % totalOrang;
+            return daftarUrutanKaryawan[idxPetugas] || "-";
         }
 
         function hitungTotalJam(jamMulai, jamAkhir) {
@@ -527,17 +533,12 @@ const db = initializeFirestore(app, {
             }).format(angka);
         };
 
-        const namaBulan = [
-            "Januari", "Februari", "Maret", "April", "Mei", "Juni",
-            "Juli", "Agustus", "September", "Oktober", "November", "Desember"
-        ];
-
-        const namaHari = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
-
         function parseTanggal(tglStr) {
             if (!tglStr) return new Date();
-            let parts = tglStr.trim().replace(/\s+/g, " ").split(" ");
-            if (parts.length !== 3) return new Date();
+            // Menghapus nama hari dan koma jika ada (misal: "Senin, 19 Agustus 2026")
+            let cleanStr = tglStr.replace(/^[^,]+,\s*/, '').trim().replace(/\s+/g, " ");
+            let parts = cleanStr.split(" ");
+            if (parts.length < 3) return new Date();
             
             let d = parseInt(parts[0], 10);
             let bulanStr = parts[1];
@@ -616,7 +617,7 @@ const db = initializeFirestore(app, {
                         document.getElementById("namaKaryawanJudul").textContent = namaKaryawanLogin;
                         document.getElementById("userAvatar").textContent = getInisial(namaKaryawanLogin);
 
-                        // Tambahkan baris ini untuk mengambil nilai status dari Firebase (misal: "Admin" / "Karyawan")
+                        // Ambil status pengguna dari Firestore
                         document.getElementById("userStatusBadge").textContent = dbData.status || "Karyawan";
                         
                         let arrayDetail = JSON.parse(dbData.detail || "[]");
@@ -632,7 +633,7 @@ const db = initializeFirestore(app, {
                             (a, b) => parseTanggal(a.tanggal || Object.values(a)[0]) - parseTanggal(b.tanggal || Object.values(b)[0])
                         );
 
-                        // Tanggal Acuan
+                        // Tanggal Hari Ini
                         let hariIni = new Date();
                         hariIni.setHours(0, 0, 0, 0);
 
@@ -665,11 +666,16 @@ const db = initializeFirestore(app, {
 
                         // Render Tabel Absensi
                         let startDate = new Date(tglAcuanBulan.getFullYear(), tglAcuanBulan.getMonth(), 1, 0, 0, 0, 0);
+                        let lastDayOfMonth = new Date(tglAcuanBulan.getFullYear(), tglAcuanBulan.getMonth() + 1, 0, 0, 0, 0, 0);
+                        
+                        // Batas akhir render: Hari Ini atau akhir bulan
+                        let endDate = (hariIni < lastDayOfMonth && tglAcuanBulan.getMonth() === hariIni.getMonth()) ? hariIni : lastDayOfMonth;
+
                         let barisHTML = "";
                         let currDate = new Date(startDate);
                         let totalRecordCount = 0;
 
-                        while (currDate <= hariIni) {
+                        while (currDate <= endDate) {
                             let tglKey = formatTanggal(currDate);
 
                             let dataHariIni = arrayDetail.find((item) => {
@@ -780,19 +786,18 @@ const db = initializeFirestore(app, {
                         document.getElementById("statTotalLongtrip").textContent = `${countLongtripJagaMalam} Sesi`;
                         document.getElementById("statNominalLongtrip").textContent = `+${formatRupiah(nominalLongtrip)}`;
 
-                        // Update Distribution Card Text
-document.getElementById("distHadirText").textContent = `${totalHariMasuk} Hari (${totalRecordCount} Log)`;
-document.getElementById("distLongtripText").textContent = `${countLongtripJagaMalam} Sesi (${countLongtripJagaMalam} x Rp 174.000)`;
-document.getElementById("distOvertimeText").textContent = `${totalJamOvertime} Jam (${totalJamOvertime} x Rp 15.000)`;
+                        // Update Distribution Card Text & Progress Bar
+                        document.getElementById("distHadirText").textContent = `${totalHariMasuk} Hari (${totalRecordCount} Log)`;
+                        document.getElementById("distLongtripText").textContent = `${countLongtripJagaMalam} Sesi (${countLongtripJagaMalam} x Rp 174.000)`;
+                        document.getElementById("distOvertimeText").textContent = `${totalJamOvertime} Jam (${totalJamOvertime} x Rp 15.000)`;
 
-// Tambahkan kode ini agar Progress Bar bergerak dinamis:
-const pctHadir = totalRecordCount > 0 ? Math.min(100, Math.round((totalHariMasuk / totalRecordCount) * 100)) : 0;
-const pctLongtrip = totalHariMasuk > 0 ? Math.min(100, Math.round((countLongtripJagaMalam / totalHariMasuk) * 100)) : 0;
-const pctOvertime = totalHariMasuk > 0 ? Math.min(100, Math.round((totalJamOvertime / (totalHariMasuk * 2)) * 100)) : 0;
+                        const pctHadir = totalRecordCount > 0 ? Math.min(100, Math.round((totalHariMasuk / totalRecordCount) * 100)) : 0;
+                        const pctLongtrip = totalHariMasuk > 0 ? Math.min(100, Math.round((countLongtripJagaMalam / totalHariMasuk) * 100)) : 0;
+                        const pctOvertime = totalHariMasuk > 0 ? Math.min(100, Math.round((totalJamOvertime / (totalHariMasuk * 2)) * 100)) : 0;
 
-document.getElementById("distHadirBar").style.width = `${pctHadir}%`;
-document.getElementById("distLongtripBar").style.width = `${pctLongtrip}%`;
-document.getElementById("distOvertimeBar").style.width = `${pctOvertime}%`;
+                        document.getElementById("distHadirBar").style.width = `${pctHadir}%`;
+                        document.getElementById("distLongtripBar").style.width = `${pctLongtrip}%`;
+                        document.getElementById("distOvertimeBar").style.width = `${pctOvertime}%`;
 
                         // Update Financial Card Breakdown
                         document.getElementById("calcGajiPokokSub").textContent = `${totalHariMasuk} Hari x Rp 174.000`;
@@ -817,21 +822,21 @@ document.getElementById("distOvertimeBar").style.width = `${pctOvertime}%`;
                         document.getElementById("valGajiBersih").textContent = formatRupiah(gajiBersih);
 
                         // 1. Lepas fokus dari kolom input & tutup keyboard virtual HP
-if (document.activeElement) {
-    document.activeElement.blur();
-}
+                        if (document.activeElement) {
+                            document.activeElement.blur();
+                        }
 
-// 2. Tampilkan Dashboard
-searchCard.classList.add("hidden");
-hasilBox.classList.remove("hidden");
-hasilBox.classList.add("block");
+                        // 2. Tampilkan Dashboard
+                        searchCard.classList.add("hidden");
+                        hasilBox.classList.remove("hidden");
+                        hasilBox.classList.add("block");
 
-// 3. Berikan delay 100ms agar browser HP selesai menutup keyboard & mereset zoom
-setTimeout(() => {
-    window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
-    document.body.scrollTop = 0; // Untuk Safari Mobile
-    document.documentElement.scrollTop = 0; // Untuk Chrome Mobile
-}, 100);
+                        // 3. Scroll ke atas
+                        setTimeout(() => {
+                            window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
+                            document.body.scrollTop = 0;
+                            document.documentElement.scrollTop = 0;
+                        }, 100);
                         
                     } else {
                         errorBox.textContent = "NIK yang Anda masukkan salah.";
@@ -864,10 +869,6 @@ setTimeout(() => {
             setTimeout(() => {
                 toast.classList.add('hidden');
             }, 3000);
-        };
-
-        window.downloadSlipGaji = function() {
-            showToast("Menyiapkan berkas Slip Gaji PDF...");
         };
     </script>
 </body>

@@ -466,27 +466,45 @@ const db = initializeFirestore(app, {
         ];
 
         // 3. Helper Functions
-        function cekGiliranTugasKaryawan(namaKaryawan, tglAwalFilter, tglAkhirFilter) {
-            let idxKaryawan = daftarUrutanKaryawan.indexOf(namaKaryawan);
-            if (idxKaryawan === -1) return [];
+        // 1. Tambahkan fungsi helper selisih hari yang aman dari bug jam/zona waktu
+function hitungSelisihHari(tgl1, tgl2) {
+    const utc1 = Date.UTC(tgl1.getFullYear(), tgl1.getMonth(), tgl1.getDate());
+    const utc2 = Date.UTC(tgl2.getFullYear(), tgl2.getMonth(), tgl2.getDate());
+    return Math.floor((utc1 - utc2) / (1000 * 60 * 60 * 24));
+}
 
-            let totalOrang = daftarUrutanKaryawan.length;
-            let tanggalMendatang = [];
+// 2. Perbarui fungsi getPetugasHariIni
+function getPetugasHariIni(tanggal = new Date()) {
+    let tglPilihan = new Date(tanggal);
+    let selisihHari = hitungSelisihHari(tglPilihan, TANGGAL_ACUAN_AWAL);
+    
+    if (selisihHari < 0) return "-";
+    let idxPetugas = selisihHari % daftarUrutanKaryawan.length;
+    return daftarUrutanKaryawan[idxPetugas];
+}
 
-            let curr = new Date(tglAwalFilter);
-            while (curr <= tglAkhirFilter) {
-                let selisihMilikHari = Math.round((curr - TANGGAL_ACUAN_AWAL) / (1000 * 60 * 60 * 24));
-                
-                if (selisihMilikHari >= 0) {
-                    let idxPetugasHariIni = selisihMilikHari % totalOrang;
-                    if (idxPetugasHariIni === idxKaryawan) {
-                        tanggalMendatang.push(formatTanggal(curr));
-                    }
-                }
-                curr.setDate(curr.getDate() + 1);
+// 3. Perbarui fungsi cekGiliranTugasKaryawan
+function cekGiliranTugasKaryawan(namaKaryawan, tglAwalFilter, tglAkhirFilter) {
+    let idxKaryawan = daftarUrutanKaryawan.indexOf(namaKaryawan);
+    if (idxKaryawan === -1) return [];
+
+    let totalOrang = daftarUrutanKaryawan.length;
+    let tanggalMendatang = [];
+
+    let curr = new Date(tglAwalFilter);
+    while (curr <= tglAkhirFilter) {
+        let selisihMilikHari = hitungSelisihHari(curr, TANGGAL_ACUAN_AWAL);
+        
+        if (selisihMilikHari >= 0) {
+            let idxPetugasHariIni = selisihMilikHari % totalOrang;
+            if (idxPetugasHariIni === idxKaryawan) {
+                tanggalMendatang.push(formatTanggal(curr));
             }
-            return tanggalMendatang;
         }
+        curr.setDate(curr.getDate() + 1);
+    }
+    return tanggalMendatang;
+}
 
         function getPetugasHariIni(tanggal = new Date()) {
             let tglPilihan = new Date(tanggal);

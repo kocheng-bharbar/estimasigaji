@@ -127,6 +127,23 @@
                     </div>
                 </div>
 
+                <!-- BANNER INFORMASI JADWAL DRIVER (TAMBAHAN BARU) -->
+<div id="infoJadwalContainer" style="background-color: #f8f9fa; border-left: 4px solid #0d6efd; padding: 12px; margin: 15px 0; border-radius: 6px; display: none;">
+  <div style="font-size: 14px; margin-bottom: 4px;">
+    <strong>Hari ini:</strong> <span id="shiftHariIni">-</span>
+  </div>
+  <div style="font-size: 14px; margin-bottom: 8px;">
+    <strong>Unit yang dioperasikan:</strong> <span id="unitHariIni">-</span>
+  </div>
+  <hr style="margin: 8px 0; border: 0; border-top: 1px dashed #ccc;">
+  <div style="font-size: 14px; margin-bottom: 4px;">
+    <strong>Besok:</strong> <span id="shiftBesok">-</span>
+  </div>
+  <div style="font-size: 14px;">
+    <strong>Unit yang dioperasikan besok:</strong> <span id="unitBesok">-</span>
+  </div>
+</div>
+
                 <!-- Baris 3: Tanggal Hari Ini & Tombol Keluar -->
                 <div class="pt-3 border-t border-slate-100 flex items-center justify-between gap-2 w-full">
                     <div class="flex items-center gap-2 px-2.5 py-1.5 bg-slate-100/80 border border-slate-200/60 rounded-xl text-[11px] sm:text-xs font-bold text-slate-800 shrink-0">
@@ -627,6 +644,71 @@
                             errorBox.classList.remove("hidden");
                             return;
                         }
+
+                        // 1. Kamus Penerjemah Kode Shift
+function terjemahkanShift(kode) {
+  if (!kode || kode === "-" || kode.toLowerCase() === "off") return "Libur / Off";
+  
+  const mapShift = {
+    "S": "Shift Siang",
+    "P": "Shift Pagi",
+    "P/1EM": "Shift Pagi / 1EM",
+    "P/2EM": "Shift Pagi / 2EM",
+    "P/EM": "Shift Pagi / EM"
+  };
+
+  return mapShift[kode.trim()] || kode; // Kembalikan kode asli jika tidak ada di kamus
+}
+
+// 2. Fungsi Utama Menampilkan Informasi Jadwal Driver
+async function tampilkanInformasiJadwal(namaDriver) {
+  if (!namaDriver) return;
+
+  try {
+    // Ambil dokumen driver dari koleksi jadwal_kerja
+    const docRef = doc(db, "jadwal_kerja", namaDriver);
+    const docSnap = await getDoc(docRef);
+
+    if (docSnap.exists()) {
+      const data = docSnap.data();
+      const jadwal = data.jadwal || {};
+      const unit = data.unit || "-";
+
+      // Hitung Tanggal Hari Ini dan Besok
+      const sekarang = new Date();
+      const tglHariIni = String(sekarang.getDate());
+      
+      const besok = new Date();
+      besok.setDate(sekarang.getDate() + 1);
+      const tglBesok = String(besok.getDate());
+
+      // Ambil kode shift dari Firestore Map
+      const kodeHariIni = jadwal[tglHariIni] || "-";
+      let kodeBesok = jadwal[tglBesok];
+
+      // Penanganan khusus jika besok sudah masuk tanggal 1 bulan berikutnya
+      if (!kodeBesok && besok.getDate() === 1) {
+        kodeBesok = "-"; // Bisa disesuaikan jika mengambil dokumen periode bulan baru
+      } else if (!kodeBesok) {
+        kodeBesok = "-";
+      }
+
+      // Update Tampilan UI (Text HTML)
+      document.getElementById("shiftHariIni").innerText = terjemahkanShift(kodeHariIni);
+      document.getElementById("unitHariIni").innerText = unit;
+      
+      document.getElementById("shiftBesok").innerText = terjemahkanShift(kodeBesok);
+      document.getElementById("unitBesok").innerText = unit;
+
+      // Tampilkan kontainer jadwal
+      document.getElementById("infoJadwalContainer").style.display = "block";
+    } else {
+      console.log("Data jadwal_kerja tidak ditemukan untuk nama:", namaDriver);
+    }
+  } catch (error) {
+    console.error("Gagal mengambil data jadwal:", error);
+  }
+}
 
                         // Sort Tanggal
                         arrayDetail.sort(

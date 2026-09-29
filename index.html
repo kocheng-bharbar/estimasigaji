@@ -669,6 +669,7 @@ function formatTanggalISO(dateObj) {
 }
 
 async function tampilkanInformasiJadwal(namaDriver) {
+  console.log("Mencari jadwal untuk:", namaDriver); // CHECK 1
   if (!namaDriver) return;
 
   try {
@@ -676,35 +677,34 @@ async function tampilkanInformasiJadwal(namaDriver) {
     const docSnap = await getDoc(docRef);
 
     if (docSnap.exists()) {
+      console.log("Data Firestore Ditemukan:", docSnap.data()); // CHECK 2
       const data = docSnap.data();
       const jadwal = data.jadwal || {};
       const unit = data.unit || "-";
 
-      // 1. Dapatkan Kunci Tanggal Hari Ini & Besok dalam format YYYY-MM-DD
       const sekarang = new Date();
-      const keyHariIni = formatTanggalISO(sekarang); // Contoh: "2026-09-29"
+      const keyHariIni = formatTanggalISO(sekarang);
 
       const besok = new Date();
       besok.setDate(sekarang.getDate() + 1);
-      const keyBesok = formatTanggalISO(besok);     // Contoh: "2026-09-30"
+      const keyBesok = formatTanggalISO(besok);
 
-      // 2. Ambil nilai shift langsung dari Map Firestore
       const kodeHariIni = jadwal[keyHariIni] || "-";
       const kodeBesok = jadwal[keyBesok] || "-";
 
-      // 3. Update Elemen UI Website
       document.getElementById("shiftHariIni").innerText = terjemahkanShift(kodeHariIni);
       document.getElementById("unitHariIni").innerText = unit;
       
       document.getElementById("shiftBesok").innerText = terjemahkanShift(kodeBesok);
       document.getElementById("unitBesok").innerText = unit;
 
+      // MENAMPILKAN BANNER
       document.getElementById("infoJadwalContainer").style.display = "block";
     } else {
-      console.log("Data jadwal_kerja tidak ditemukan untuk nama:", namaDriver);
+      console.log("❌ Dokumen tidak ditemukan di Firestore untuk nama:", namaDriver);
     }
   } catch (error) {
-    console.error("Gagal mengambil data jadwal:", error);
+    console.error("❌ Error Firestore:", error);
   }
 }
 

@@ -127,22 +127,22 @@
                     </div>
                 </div>
 
-                <!-- BANNER INFORMASI JADWAL DRIVER (TAMBAHAN BARU) -->
-<div id="infoJadwalContainer" style="background-color: #f8f9fa; border-left: 4px solid #0d6efd; padding: 12px; margin: 15px 0; border-radius: 6px; display: none;">
-  <div style="font-size: 14px; margin-bottom: 4px;">
-    <strong>Hari ini:</strong> <span id="shiftHariIni">-</span>
-  </div>
-  <div style="font-size: 14px; margin-bottom: 8px;">
-    <strong>Unit yang dioperasikan:</strong> <span id="unitHariIni">-</span>
-  </div>
-  <hr style="margin: 8px 0; border: 0; border-top: 1px dashed #ccc;">
-  <div style="font-size: 14px; margin-bottom: 4px;">
-    <strong>Besok:</strong> <span id="shiftBesok">-</span>
-  </div>
-  <div style="font-size: 14px;">
-    <strong>Unit yang dioperasikan besok:</strong> <span id="unitBesok">-</span>
-  </div>
-</div>
+                <!-- BANNER INFORMASI JADWAL DRIVER -->
+                <div id="infoJadwalContainer" class="hidden bg-slate-50 border-l-4 border-blue-600 p-3 my-2 rounded-r-xl text-xs text-slate-800">
+                    <div class="mb-1">
+                        <strong>Hari ini:</strong> <span id="shiftHariIni" class="font-semibold text-blue-800">-</span>
+                    </div>
+                    <div class="mb-2">
+                        <strong>Unit yang dioperasikan:</strong> <span id="unitHariIni" class="font-semibold text-slate-900">-</span>
+                    </div>
+                    <hr class="my-2 border-t border-dashed border-slate-300">
+                    <div class="mb-1">
+                        <strong>Besok:</strong> <span id="shiftBesok" class="font-semibold text-blue-800">-</span>
+                    </div>
+                    <div>
+                        <strong>Unit yang dioperasikan besok:</strong> <span id="unitBesok" class="font-semibold text-slate-900">-</span>
+                    </div>
+                </div>
 
                 <!-- Baris 3: Tanggal Hari Ini & Tombol Keluar -->
                 <div class="pt-3 border-t border-slate-100 flex items-center justify-between gap-2 w-full">
@@ -429,6 +429,7 @@
             </div>
 
         </div>
+    </div>
 
     <!-- MODAL NOTIFIKASI TOAST -->
     <div id="toastMessage" class="fixed bottom-5 right-5 left-5 sm:left-auto sm:max-w-md bg-slate-900 text-white px-4 py-3 rounded-2xl shadow-2xl z-50 hidden flex items-center gap-3 border border-slate-700 text-xs font-medium">
@@ -483,7 +484,7 @@
 
         const namaHari = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
 
-        // 3. Helper Functions Terperbaiki
+        // 3. Helper Functions
         function getIndexKaryawan(nama) {
             if (!nama) return -1;
             const cleanNama = nama.trim().toLowerCase();
@@ -500,8 +501,6 @@
             let curr = new Date(tglAwalFilter);
             while (curr <= tglAkhirFilter) {
                 let selisihMilikHari = Math.round((curr - TANGGAL_ACUAN_AWAL) / (1000 * 60 * 60 * 24));
-                
-                // Modulo matematika yang mendukung selisih hari negatif
                 let idxPetugasHariIni = ((selisihMilikHari % totalOrang) + totalOrang) % totalOrang;
                 if (idxPetugasHariIni === idxKaryawan) {
                     tanggalMendatang.push(formatTanggal(curr));
@@ -515,7 +514,6 @@
             let tglPilihan = new Date(tanggal);
             tglPilihan.setHours(0, 0, 0, 0);
             let selisihHari = Math.round((tglPilihan - TANGGAL_ACUAN_AWAL) / (1000 * 60 * 60 * 24));
-            
             let totalOrang = daftarUrutanKaryawan.length;
             let idxPetugas = ((selisihHari % totalOrang) + totalOrang) % totalOrang;
             return daftarUrutanKaryawan[idxPetugas] || "-";
@@ -552,7 +550,6 @@
 
         function parseTanggal(tglStr) {
             if (!tglStr) return new Date();
-            // Menghapus nama hari dan koma jika ada (misal: "Senin, 19 Agustus 2026")
             let cleanStr = tglStr.replace(/^[^,]+,\s*/, '').trim().replace(/\s+/g, " ");
             let parts = cleanStr.split(" ");
             if (parts.length < 3) return new Date();
@@ -574,6 +571,25 @@
             return `${d} ${m} ${y}`;
         }
 
+        function formatTanggalISO(dateObj) {
+            const yyyy = dateObj.getFullYear();
+            const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
+            const dd = String(dateObj.getDate()).padStart(2, '0');
+            return `${yyyy}-${mm}-${dd}`;
+        }
+
+        function terjemahkanShift(kode) {
+            if (!kode || kode === "-" || kode.toLowerCase() === "off") return "Libur / Off";
+            const mapShift = {
+                "S": "Shift Siang",
+                "P": "Shift Pagi",
+                "P/1EM": "Shift Pagi / 1EM",
+                "P/2EM": "Shift Pagi / 2EM",
+                "P/EM": "Shift Pagi / EM"
+            };
+            return mapShift[kode.trim()] || kode;
+        }
+
         function getInisial(nama) {
             if (!nama) return "KH";
             let parts = nama.trim().split(" ");
@@ -581,7 +597,46 @@
             return (parts[0][0] + parts[1][0]).toUpperCase();
         }
 
-        // 4. Load Dropdown Nama
+        // 4. Menampilkan Informasi Jadwal Driver Dari Firestore
+        async function tampilkanInformasiJadwal(namaDriver) {
+            if (!namaDriver) return;
+            const container = document.getElementById("infoJadwalContainer");
+            
+            try {
+                const docRef = doc(db, "jadwal_kerja", namaDriver);
+                const docSnap = await getDoc(docRef);
+
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    const jadwal = data.jadwal || {};
+                    const unit = data.unit || "-";
+
+                    const sekarang = new Date();
+                    const keyHariIni = formatTanggalISO(sekarang);
+
+                    const besok = new Date();
+                    besok.setDate(sekarang.getDate() + 1);
+                    const keyBesok = formatTanggalISO(besok);
+
+                    const kodeHariIni = jadwal[keyHariIni] || "-";
+                    const kodeBesok = jadwal[keyBesok] || "-";
+
+                    document.getElementById("shiftHariIni").innerText = terjemahkanShift(kodeHariIni);
+                    document.getElementById("unitHariIni").innerText = unit;
+                    document.getElementById("shiftBesok").innerText = terjemahkanShift(kodeBesok);
+                    document.getElementById("unitBesok").innerText = unit;
+
+                    container.classList.remove("hidden");
+                } else {
+                    container.classList.add("hidden");
+                }
+            } catch (error) {
+                console.error("Error memuat jadwal:", error);
+                container.classList.add("hidden");
+            }
+        }
+
+        // 5. Load Dropdown Nama
         async function muatDaftarNamaOtomatis() {
             const dropdown = document.getElementById("inputNama");
             try {
@@ -602,7 +657,7 @@
         }
         muatDaftarNamaOtomatis();
 
-        // 5. Event Listener Cari Data
+        // 6. Event Listener Cari Data
         document.getElementById("btnCari").addEventListener("click", async () => {
             const nama = document.getElementById("inputNama").value;
             const nik = document.getElementById("inputNik").value;
@@ -633,8 +688,6 @@
                         // Set Profil Header
                         document.getElementById("namaKaryawanJudul").textContent = namaKaryawanLogin;
                         document.getElementById("userAvatar").textContent = getInisial(namaKaryawanLogin);
-
-                        // Ambil status pengguna dari Firestore
                         document.getElementById("userStatusBadge").textContent = dbData.status || "Karyawan";
                         
                         let arrayDetail = JSON.parse(dbData.detail || "[]");
@@ -681,11 +734,12 @@
                             document.getElementById("txtStatusGiliranSaya").textContent = `Tidak terdaftar dalam rotasi piket`;
                         }
 
+                        // ** PEMANGGILAN DARI FIRESTORE UNTUK JADWAL DRIVER **
+                        await tampilkanInformasiJadwal(namaKaryawanLogin);
+
                         // Render Tabel Absensi
                         let startDate = new Date(tglAcuanBulan.getFullYear(), tglAcuanBulan.getMonth(), 1, 0, 0, 0, 0);
                         let lastDayOfMonth = new Date(tglAcuanBulan.getFullYear(), tglAcuanBulan.getMonth() + 1, 0, 0, 0, 0, 0);
-                        
-                        // Batas akhir render: Hari Ini atau akhir bulan
                         let endDate = (hariIni < lastDayOfMonth && tglAcuanBulan.getMonth() === hariIni.getMonth()) ? hariIni : lastDayOfMonth;
 
                         let barisHTML = "";
@@ -753,69 +807,6 @@
                             }
                             currDate.setDate(currDate.getDate() + 1);
                         }
-
-                        // 1. Kamus Penerjemah Kode Shift
-function terjemahkanShift(kode) {
-  if (!kode || kode === "-" || kode.toLowerCase() === "off") return "Libur / Off";
-  
-  const mapShift = {
-    "S": "Shift Siang",
-    "P": "Shift Pagi",
-    "P/1EM": "Shift Pagi / 1EM",
-    "P/2EM": "Shift Pagi / 2EM",
-    "P/EM": "Shift Pagi / EM"
-  };
-
-  return mapShift[kode.trim()] || kode; // Kembalikan kode asli jika tidak ada di kamus
-}
-
-// Fungsi pembantu untuk membuat string YYYY-MM-DD sesuai zona waktu lokal
-function formatTanggalISO(dateObj) {
-  const yyyy = dateObj.getFullYear();
-  const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
-  const dd = String(dateObj.getDate()).padStart(2, '0');
-  return `${yyyy}-${mm}-${dd}`;
-}
-
-async function tampilkanInformasiJadwal(namaDriver) {
-  console.log("Mencari jadwal untuk:", namaDriver); // CHECK 1
-  if (!namaDriver) return;
-
-  try {
-    const docRef = doc(db, "jadwal_kerja", namaDriver);
-    const docSnap = await getDoc(docRef);
-
-    if (docSnap.exists()) {
-      console.log("Data Firestore Ditemukan:", docSnap.data()); // CHECK 2
-      const data = docSnap.data();
-      const jadwal = data.jadwal || {};
-      const unit = data.unit || "-";
-
-      const sekarang = new Date();
-      const keyHariIni = formatTanggalISO(sekarang);
-
-      const besok = new Date();
-      besok.setDate(sekarang.getDate() + 1);
-      const keyBesok = formatTanggalISO(besok);
-
-      const kodeHariIni = jadwal[keyHariIni] || "-";
-      const kodeBesok = jadwal[keyBesok] || "-";
-
-      document.getElementById("shiftHariIni").innerText = terjemahkanShift(kodeHariIni);
-      document.getElementById("unitHariIni").innerText = unit;
-      
-      document.getElementById("shiftBesok").innerText = terjemahkanShift(kodeBesok);
-      document.getElementById("unitBesok").innerText = unit;
-
-      // MENAMPILKAN BANNER
-      document.getElementById("infoJadwalContainer").style.display = "block";
-    } else {
-      console.log("❌ Dokumen tidak ditemukan di Firestore untuk nama:", namaDriver);
-    }
-  } catch (error) {
-    console.error("❌ Error Firestore:", error);
-  }
-}
 
                         tableBody.innerHTML = barisHTML;
                         document.getElementById("logCountText").textContent = `${totalRecordCount} Record`;
@@ -901,17 +892,20 @@ async function tampilkanInformasiJadwal(namaDriver) {
 
                         document.getElementById("valGajiBersih").textContent = formatRupiah(gajiBersih);
 
-                        // 1. Lepas fokus dari kolom input & tutup keyboard virtual HP
+                        // Tutup Virtual Keyboard Mobile
                         if (document.activeElement) {
                             document.activeElement.blur();
                         }
 
-                        // 2. Tampilkan Dashboard
+                        // Tampilkan Dashboard
                         searchCard.classList.add("hidden");
                         hasilBox.classList.remove("hidden");
                         hasilBox.classList.add("block");
 
-                        // 3. Scroll ke atas
+                        // Toast Berhasil
+                        window.showToast("Data absensi & slip gaji berhasil dimuat");
+
+                        // Scroll ke atas
                         setTimeout(() => {
                             window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
                             document.body.scrollTop = 0;
@@ -933,14 +927,15 @@ async function tampilkanInformasiJadwal(namaDriver) {
             }
         });
 
-        // 6. Tombol Logout / Reset
+        // 7. Tombol Logout / Reset
         document.getElementById("btnReset").addEventListener("click", () => {
             document.getElementById("hasilData").classList.add("hidden");
             document.getElementById("searchCard").classList.remove("hidden");
             document.getElementById("inputNik").value = "";
+            document.getElementById("infoJadwalContainer").classList.add("hidden");
         });
 
-        // 7. Toast Helper
+        // 8. Toast Helper
         window.showToast = function(message) {
             const toast = document.getElementById('toastMessage');
             const toastText = document.getElementById('toastText');
